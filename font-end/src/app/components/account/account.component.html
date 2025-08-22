@@ -1,0 +1,186 @@
+<div class="spotify-container">
+  <!-- Sidebar -->
+  <app-sidebar></app-sidebar>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <app-search-header
+      [currentUser]="currentUser"
+      (logoutEvent)="logout()">
+    </app-search-header>
+
+    <div class="content-section">
+      <div class="account-page">
+        <div class="account-content">
+          <div class="profile-card">
+            <div class="profile-header">
+              <div class="avatar-section">
+                <div
+                  class="avatar-wrapper"
+                  *ngIf="currentUser"
+                  (click)="triggerAvatarSelect()"
+                  (keyup.enter)="triggerAvatarSelect()"
+                  tabindex="0"
+                  role="button"
+                  [class.uploading]="avatarUploading"
+                  aria-label="Thay đổi ảnh đại diện">
+                  <div class="avatar">
+                    <img
+                      *ngIf="getDisplayedAvatarUrl() as avatarSrc"
+                      [src]="avatarSrc"
+                      [alt]="currentUser.fullName || currentUser.username">
+                    <span *ngIf="!getDisplayedAvatarUrl()" class="avatar-text">
+                      {{ (currentUser.fullName || currentUser.username || 'U').charAt(0).toUpperCase() }}
+                    </span>
+                  </div>
+                  <div class="avatar-overlay">
+                    <i class="fa-solid fa-camera"></i>
+                    <span>{{ avatarUploading ? 'Đang cập nhật...' : (pendingAvatarFile ? 'Nhấn lưu để áp dụng' : 'Đổi ảnh') }}</span>
+                  </div>
+                </div>
+                <input
+                  #avatarInput
+                  type="file"
+                  accept="image/*"
+                  hidden
+                  (change)="onAvatarSelected($event)">
+                <div class="profile-info" *ngIf="currentUser">
+                  <h2>{{ currentUser.fullName || currentUser.username }}</h2>
+                  <p class="username">@{{ currentUser.username }}</p>
+                </div>
+              </div>
+            </div>
+
+            <div class="alert-stack">
+              <div class="error-message" *ngIf="errorMessage || passwordErrorMessage">
+                <i class="fa-solid fa-circle-exclamation"></i>
+                {{ errorMessage || passwordErrorMessage }}
+              </div>
+
+              <div class="success-message" *ngIf="successMessage">
+                <i class="fa-solid fa-circle-check"></i>
+                {{ successMessage }}
+              </div>
+            </div>
+
+            <form [formGroup]="profileForm" (ngSubmit)="onSubmit()" class="profile-form">
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="fullName">Họ và tên *</label>
+                  <input
+                    type="text"
+                    id="fullName"
+                    formControlName="fullName"
+                    placeholder="Nhập họ và tên"
+                    [class.error]="profileForm.get('fullName')?.invalid && profileForm.get('fullName')?.touched"
+                  />
+                  <div class="field-error" *ngIf="profileForm.get('fullName')?.invalid && profileForm.get('fullName')?.touched">
+                    <span *ngIf="profileForm.get('fullName')?.errors?.['required']">Vui lòng nhập họ và tên</span>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label for="email">Email *</label>
+                  <input
+                    type="email"
+                    id="email"
+                    formControlName="email"
+                    placeholder="Nhập email"
+                    [class.error]="profileForm.get('email')?.invalid && profileForm.get('email')?.touched"
+                  />
+                  <div class="field-error" *ngIf="profileForm.get('email')?.invalid && profileForm.get('email')?.touched">
+                    <span *ngIf="profileForm.get('email')?.errors?.['required']">Vui lòng nhập email</span>
+                    <span *ngIf="profileForm.get('email')?.errors?.['email']">Email không hợp lệ</span>
+                  </div>
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="dateOfBirth">Ngày sinh</label>
+                  <input
+                    type="date"
+                    id="dateOfBirth"
+                    formControlName="dateOfBirth"
+                    placeholder="Chọn ngày sinh"
+                  />
+                </div>
+
+                <div class="form-group">
+                  <label for="country">Quốc gia</label>
+                  <input
+                    type="text"
+                    id="country"
+                    formControlName="country"
+                    placeholder="Nhập quốc gia"
+                  />
+                </div>
+              </div>
+
+              <div class="form-row">
+                <div class="form-group">
+                  <label for="newPassword">Mật khẩu mới</label>
+                  <input
+                    type="password"
+                    id="newPassword"
+                    formControlName="newPassword"
+                    placeholder="Nhập mật khẩu mới"
+                    [class.error]="profileForm.get('newPassword')?.invalid && profileForm.get('newPassword')?.touched"
+                  />
+                  <div class="field-error" *ngIf="profileForm.get('newPassword')?.invalid && profileForm.get('newPassword')?.touched">
+                    <span *ngIf="profileForm.get('newPassword')?.errors?.['minlength']">Mật khẩu phải có ít nhất 6 ký tự</span>
+                  </div>
+                </div>
+
+                <div class="form-group">
+                  <label for="confirmPassword">Xác nhận mật khẩu mới</label>
+                  <input
+                    type="password"
+                    id="confirmPassword"
+                    formControlName="confirmPassword"
+                    placeholder="Nhập lại mật khẩu mới"
+                    [class.error]="profileForm.hasError('passwordMismatch') && profileForm.get('confirmPassword')?.touched"
+                  />
+                  <div class="field-error" *ngIf="profileForm.hasError('passwordMismatch') && profileForm.get('confirmPassword')?.touched">
+                    Mật khẩu xác nhận không khớp
+                  </div>
+                </div>
+              </div>
+
+              <div class="button-group">
+                <button type="button" class="cancel-button" (click)="cancelEdit()" [disabled]="loading">
+                  Hủy
+                </button>
+                <button type="submit" class="save-button" [disabled]="loading || profileForm.invalid">
+                  <span *ngIf="!loading">Lưu thay đổi</span>
+                  <span *ngIf="loading">Đang lưu...</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <app-player-bar
+    [currentTrack]="currentTrack"
+    [progress]="progress"
+    [volume]="volume"
+    [isPlaying]="isPlaying"
+    [currentTime]="currentTime"
+    [duration]="duration"
+    [currentSongId]="currentSongId"
+    [isFavorite]="isFavorite"
+    [bufferedProgress]="bufferedProgress"
+    (playPause)="onPlayPause()"
+    (seek)="onSeek($event)"
+    (volumeChange)="onVolumeChange($event)"
+    (replay)="onReplay()"
+    (shuffle)="onShuffle()"
+    (muteToggle)="onMuteToggle()"
+    (previous)="onPrevious()"
+    (next)="onNext()"
+    (toggleFavorite)="onToggleFavorite()">
+  </app-player-bar>
+</div>
