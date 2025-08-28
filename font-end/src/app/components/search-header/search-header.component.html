@@ -1,0 +1,170 @@
+<header class="top-header">
+  <div class="search-bar-wrapper">
+  <div class="search-bar">
+    <svg viewBox="0 0 24 24" fill="currentColor" class="search-icon">
+      <path d="M10.533 1.279c-5.18 0-9.407 4.14-9.407 9.279s4.226 9.279 9.407 9.279c2.234 0 4.29-.77 5.907-2.058l4.353 4.353a1 1 0 1 0 1.414-1.414l-4.344-4.344a9.157 9.157 0 0 0 2.077-5.816c0-5.14-4.226-9.28-9.407-9.28zm-7.407 9.279c0-4.006 3.302-7.28 7.407-7.28s7.407 3.274 7.407 7.28-3.302 7.279-7.407 7.279-7.407-3.273-7.407-7.28z"/>
+    </svg>
+      <input 
+        type="text" 
+        placeholder="Bạn muốn nghe gì?" 
+        [(ngModel)]="searchQuery"
+        (ngModelChange)="onSearchInput($event)"
+        (input)="onSearchInput($any($event.target).value)"
+        (focus)="onSearchFocus()"
+        (keydown)="onSearchKeyDown($event)"
+      />
+    </div>
+    <button class="search-action-button" type="button" (click)="onBrowseGenresClick()">
+      <i class="fa-solid fa-box"></i>
+    </button>
+    
+    <!-- Search Dropdown -->
+    <div class="search-dropdown" *ngIf="showSearchDropdown">
+      <div class="search-dropdown-content">
+        <!-- Search Results Section -->
+        <div class="search-section" *ngIf="showSearchResults">
+          <div class="search-section-header">
+            <h3>Kết quả tìm kiếm</h3>
+          </div>
+          <div class="search-items" *ngIf="!isLoadingSearchResults && searchResults.length > 0">
+            <div 
+              class="search-item song-item" 
+              *ngFor="let song of searchResults"
+              [class.active]="song.songId === currentSongId"
+              (click)="onSongClick(song)">
+              <div class="item-image" [style.backgroundImage]="song.coverImageUrl ? 'url(' + song.coverImageUrl + ')' : ''">
+                <button class="item-play-button" type="button" (click)="onSongPlayClick($event, song)">
+                  <svg *ngIf="song.songId !== currentSongId || !isPlaying" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M8 5v14l11-7z"/>
+                  </svg>
+                  <svg *ngIf="song.songId === currentSongId && isPlaying" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M6 5h4v14H6zm8 0h4v14h-4z"/>
+                  </svg>
+                </button>
+              </div>
+              <div class="item-info">
+                <div class="item-title">{{ song.songTitle }}</div>
+                <div class="item-subtitle">{{ song.artistName }}</div>
+              </div>
+            </div>
+          </div>
+          <div class="search-loading" *ngIf="isLoadingSearchResults">
+            <i class="fa-solid fa-spinner fa-spin"></i>
+            <span>Đang tải...</span>
+          </div>
+          <div class="search-empty" *ngIf="!isLoadingSearchResults && searchResults.length === 0 && searchQuery.trim()">
+            <i class="fa-solid fa-music"></i>
+            <p>Không tìm thấy bài hát nào</p>
+          </div>
+        </div>
+
+        <!-- Popular Songs Section (only show when not searching) -->
+        <div class="search-section" *ngIf="!showSearchResults && !isLoadingPopularSongs && popularSongs.length > 0">
+          <div class="search-section-header">
+            <h3>Bài hát phổ biến</h3>
+          </div>
+          <div class="search-items">
+            <div 
+              class="search-item song-item" 
+              *ngFor="let song of popularSongs"
+              [class.active]="song.songId === currentSongId"
+              (click)="onSongClick(song)">
+              <div class="item-image" [style.backgroundImage]="song.coverImageUrl ? 'url(' + song.coverImageUrl + ')' : ''">
+                <button class="item-play-button" type="button" (click)="onSongPlayClick($event, song)">
+                  <svg *ngIf="song.songId !== currentSongId || !isPlaying" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M8 5v14l11-7z"/>
+                  </svg>
+                  <svg *ngIf="song.songId === currentSongId && isPlaying" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M6 5h4v14H6zm8 0h4v14h-4z"/>
+                  </svg>
+                </button>
+              </div>
+              <div class="item-info">
+                <div class="item-title">{{ song.songTitle }}</div>
+                <div class="item-subtitle">{{ song.artistName }}</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Loading States (for popular songs) -->
+        <div class="search-loading" *ngIf="!showSearchResults && isLoadingPopularSongs">
+          <i class="fa-solid fa-spinner fa-spin"></i>
+          <span>Đang tải...</span>
+        </div>
+
+        <!-- Empty State (for popular songs) -->
+        <div class="search-empty" *ngIf="!showSearchResults && !isLoadingPopularSongs && popularSongs.length === 0">
+          <i class="fa-solid fa-music"></i>
+          <p>Không có dữ liệu để hiển thị</p>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="user-section">
+    <div class="user-dropdown-wrapper">
+      <!-- Login Button when not authenticated -->
+      <a *ngIf="!currentUser" routerLink="/login" class="login-button">
+        <span>Đăng nhập</span>
+      </a>
+      
+      <!-- User Info when authenticated -->
+      <div class="user-info" *ngIf="currentUser" (click)="toggleUserDropdown()">
+        <div class="user-avatar">
+          <img *ngIf="getProfileImageUrl()" [src]="getProfileImageUrl()" [alt]="currentUser.fullName || currentUser.username" />
+          <span *ngIf="!getProfileImageUrl()">{{ (currentUser.fullName || currentUser.username || 'U').charAt(0).toUpperCase() }}</span>
+        </div>
+        <span class="user-name">{{ currentUser.fullName || currentUser.username }}</span>
+        <svg class="dropdown-icon" viewBox="0 0 16 16" fill="currentColor">
+          <path d="M3 6l5 5.794L13 6z"/>
+        </svg>
+      </div>
+      
+      <div class="user-dropdown" *ngIf="showUserDropdown">
+        <div class="dropdown-header" *ngIf="currentUser">
+          <div class="dropdown-user-avatar">
+            <img *ngIf="getProfileImageUrl()" [src]="getProfileImageUrl()" [alt]="currentUser.fullName || currentUser.username" />
+            <span *ngIf="!getProfileImageUrl()">{{ (currentUser.fullName || currentUser.username || 'U').charAt(0).toUpperCase() }}</span>
+          </div>
+          <div class="dropdown-user-info">
+            <div class="dropdown-user-name">{{ currentUser.fullName || currentUser.username }}</div>
+            <div class="dropdown-user-email">{{ currentUser.email }}</div>
+          </div>
+        </div>
+        <div class="dropdown-divider"></div>
+        <a routerLink="/account" class="dropdown-item" (click)="showUserDropdown = false">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+          </svg>
+          <span>Tài khoản</span>
+        </a>
+        <a *ngIf="isAdmin()" routerLink="/users" class="dropdown-item" (click)="showUserDropdown = false">
+          <i class="fa-duotone fa-solid fa-users"></i>
+          <span>Quản lý người dùng</span>
+        </a>
+        <a *ngIf="isArtist()" (click)="navigateToArtistPage()" class="dropdown-item">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+          </svg>
+          <span>Quản lý trang nghệ sĩ</span>
+        </a>
+        <a *ngIf="isRegularUser()" routerLink="/upgrade-account" class="dropdown-item" (click)="showUserDropdown = false">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+          </svg>
+          <span>Nâng cấp tài khoản</span>
+        </a>
+
+        <div class="dropdown-divider"></div>
+        <button class="dropdown-item" (click)="logout()">
+          <svg viewBox="0 0 24 24" fill="currentColor">
+            <path d="M17 7l-1.41 1.41L18.17 11H8v2h10.17l-2.58 2.58L17 17l5-5zM4 5h8V3H4c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h8v-2H4V5z"/>
+          </svg>
+          <span>Đăng xuất</span>
+        </button>
+      </div>
+    </div>
+  </div>
+</header>
+

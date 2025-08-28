@@ -1,0 +1,83 @@
+<aside class="sidebar" [class.collapsed]="isCollapsed">
+  <div class="sidebar-header">
+    <a class="sidebar-logo" routerLink="/home">
+      <i class="fa-solid fa-music logo-icon"></i>
+      <span class="logo-text">Music Stream</span>
+    </a>
+
+    <button class="sidebar-toggle" type="button" (click)="toggleSidebar()">
+      <i class="fa-solid" [ngClass]="isCollapsed ? 'fa-square-caret-right' : 'fa-square-caret-left'"></i>
+    </button>
+  </div>
+
+  <nav class="sidebar-nav">
+    <!-- Main Menu -->
+    <div class="menu-section">
+      <a routerLink="/home" routerLinkActive="active" [routerLinkActiveOptions]="{exact: false}" class="nav-item">
+        <i class="fa-solid fa-house"></i>
+        <span>Trang chủ</span>
+      </a>
+      <a routerLink="/favorites" routerLinkActive="active" class="nav-item">
+        <i class="fa-solid fa-heart"></i>
+        <span>Yêu thích</span>
+      </a>
+      <a routerLink="/playlists" routerLinkActive="active" class="nav-item">
+        <i class="fa-solid fa-list"></i>
+        <span>Danh sách phát</span>
+      </a>
+      <a routerLink="/albums-user" routerLinkActive="active" class="nav-item">
+        <i class="fa-solid fa-book"></i>
+        <span>Album</span>
+      </a>
+    </div>
+
+    <!-- Artist Menu Items -->
+    <div *ngIf="isArtist" class="menu-section">
+      <div class="menu-divider"></div>
+      <div class="menu-label">Nghệ sĩ</div>
+      <a routerLink="/upload" routerLinkActive="active" class="nav-item">
+        <i class="fa-solid fa-cloud-arrow-up"></i>
+        <span>Upload nhạc</span>
+      </a>
+      <a routerLink="/my-songs" routerLinkActive="active" class="nav-item">
+        <i class="fa-solid fa-music"></i>
+        <span>Bài hát của tôi</span>
+      </a>
+      <a routerLink="/albums" routerLinkActive="active" class="nav-item">
+        <i class="fa-solid fa-compact-disc"></i>
+        <span>Album của tôi</span>
+      </a>
+      <a routerLink="/artist-statistics" routerLinkActive="active" class="nav-item">
+        <i class="fa-solid fa-chart-line"></i>
+        <span>Thống kê</span>
+      </a>
+    </div>
+
+    <!-- Admin Menu Items -->
+    <div *ngIf="isAdmin" class="menu-section">
+      <div class="menu-divider"></div>
+      <div class="menu-label">Quản trị</div>
+      <a routerLink="/song-approval" routerLinkActive="active" class="nav-item">
+        <i class="fa-solid fa-circle-check"></i>
+        <span>Duyệt bài hát</span>
+      </a>
+      <a routerLink="/songs" routerLinkActive="active" class="nav-item">
+        <i class="fa-solid fa-table-cells-large"></i>
+        <span>Quản lý bài hát</span>
+      </a>
+      <a routerLink="/admin-albums" routerLinkActive="active" class="nav-item">
+        <i class="fa-solid fa-compact-disc"></i>
+        <span>Quản lý album</span>
+      </a>
+      <a routerLink="/genres" routerLinkActive="active" class="nav-item">
+        <i class="fa-solid fa-tags"></i>
+        <span>Quản lý thể loại</span>
+      </a>
+      <a routerLink="/statistics" routerLinkActive="active" class="nav-item">
+        <i class="fa-solid fa-chart-line"></i>
+        <span>Thống kê</span>
+      </a>
+    </div>
+  </nav>
+</aside>
+
