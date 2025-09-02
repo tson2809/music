@@ -1,0 +1,264 @@
+<div class="spotify-container">
+  <!-- Sidebar -->
+  <app-sidebar></app-sidebar>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <!-- Header -->
+    <app-search-header [currentUser]="currentUser" (logoutEvent)="logout()"></app-search-header>
+
+    <!-- Content -->
+    <div class="content-section">
+      <!-- Songs List View (when genre or ranking is selected) -->
+      <div *ngIf="selectedGenre || showRanking" class="songs-view">
+        <div class="section-header">
+          <button class="back-button" (click)="goBackToGenres()">
+            <i class="fa-solid fa-arrow-left"></i>
+            <span>Quay lại</span>
+          </button>
+          <h2>{{ showRanking ? 'Bảng xếp hạng' : selectedGenre?.genreName }}</h2>
+        </div>
+        
+        <div class="content-wrapper">
+          <!-- Loading State -->
+          <div class="loading-container" *ngIf="isLoadingSongs">
+            <i class="fa-solid fa-spinner fa-spin"></i>
+            <span>Đang tải danh sách bài hát...</span>
+          </div>
+
+          <!-- Error State -->
+          <div class="error-message" *ngIf="songError && !isLoadingSongs">
+            <i class="fa-solid fa-exclamation-circle"></i>
+            <span>{{ songError }}</span>
+          </div>
+
+          <!-- Ranking Table (when showRanking is true) -->
+          <div class="ranking-table-container" *ngIf="showRanking && !isLoadingSongs && !songError && songs.length > 0">
+            <table class="ranking-table">
+              <thead>
+                <tr>
+                  <th class="rank-col">#</th>
+                  <th class="song-col">Bài hát</th>
+                  <th class="artist-col">Nghệ sĩ</th>
+                  <th class="plays-col">Lượt nghe</th>
+                  <th class="action-col"></th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr 
+                  *ngFor="let song of songs; let i = index"
+                  [class.active]="song.songId === currentSongId"
+                  (click)="onSongClick(song)">
+                  <td class="rank-col">
+                    <span class="rank-number" [class.top-1]="i === 0" [class.top-2]="i === 1" [class.top-3]="i === 2">
+                      {{ i + 1 }}
+                    </span>
+                  </td>
+                  <td class="song-col">
+                    <div class="song-info-row">
+                      <div class="song-image-small" [style.backgroundImage]="song.coverImageUrl ? 'url(' + song.coverImageUrl + ')' : ''"></div>
+                      <span class="song-title">{{ song.songTitle }}</span>
+                    </div>
+                  </td>
+                  <td class="artist-col">
+                    <a [routerLink]="['/artists', song.artistId]" (click)="$event.stopPropagation()">
+                      {{ song.artistName }}
+                    </a>
+                  </td>
+                  <td class="plays-col">
+                    <div class="play-count-cell">
+                      <i class="fa-solid fa-headphones"></i>
+                      <span>{{ formatNumber(song.playCount || 0) }}</span>
+                    </div>
+                  </td>
+                  <td class="action-col">
+                    <button class="table-play-button" type="button" (click)="onSongPlayClick($event, song)">
+                      <svg *ngIf="song.songId !== currentSongId || !isPlaying" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M8 5v14l11-7z"/>
+                      </svg>
+                      <svg *ngIf="song.songId === currentSongId && isPlaying" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M6 5h4v14H6zm8 0h4v14h-4z"/>
+                      </svg>
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- Songs Grid (for genre view) -->
+          <div class="cards-grid" *ngIf="!showRanking && !isLoadingSongs && !songError && songs.length > 0">
+            <div 
+              class="song-card" 
+              *ngFor="let song of songs"
+              [class.active]="song.songId === currentSongId"
+              (click)="onSongClick(song)">
+              <div class="card-image" [style.backgroundImage]="song.coverImageUrl ? 'url(' + song.coverImageUrl + ')' : ''">
+                <div class="card-overlay"></div>
+                <button class="play-button" type="button" (click)="onSongPlayClick($event, song)">
+                  <svg *ngIf="song.songId !== currentSongId || !isPlaying" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M8 5v14l11-7z"/>
+                  </svg>
+                  <svg *ngIf="song.songId === currentSongId && isPlaying" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M6 5h4v14H6zm8 0h4v14h-4z"/>
+                  </svg>
+                </button>
+              </div>
+              <div class="card-content">
+                <h3>{{ song.songTitle }}</h3>
+                <p class="card-artist">
+                  <a [routerLink]="['/artists', song.artistId]" (click)="$event.stopPropagation()">
+                    {{ song.artistName }}
+                  </a>
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Empty State -->
+          <div class="empty-state" *ngIf="!isLoadingSongs && !songError && songs.length === 0">
+            <i class="fa-solid fa-music"></i>
+            <p>{{ showRanking ? 'Chưa có dữ liệu xếp hạng' : 'Không có bài hát nào trong thể loại này' }}</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Public Playlists View -->
+      <div *ngIf="showPublicPlaylists" class="songs-view">
+        <div class="section-header">
+          <button class="back-button" (click)="goBackToGenres()">
+            <i class="fa-solid fa-arrow-left"></i>
+            <span>Quay lại</span>
+          </button>
+          <h2>Danh sách phát công khai</h2>
+        </div>
+        
+        <div class="content-wrapper">
+          <!-- Loading State -->
+          <div class="loading-container" *ngIf="isLoadingPublicPlaylists">
+            <i class="fa-solid fa-spinner fa-spin"></i>
+            <span>Đang tải danh sách phát...</span>
+          </div>
+
+          <!-- Error State -->
+          <div class="error-message" *ngIf="publicPlaylistsError && !isLoadingPublicPlaylists">
+            <i class="fa-solid fa-exclamation-circle"></i>
+            <span>{{ publicPlaylistsError }}</span>
+          </div>
+
+          <!-- Playlists Grid -->
+          <div class="cards-grid" *ngIf="!isLoadingPublicPlaylists && !publicPlaylistsError && publicPlaylists.length > 0">
+            <div 
+              class="song-card playlist-card" 
+              *ngFor="let playlist of publicPlaylists"
+              (click)="onPlaylistClick(playlist)">
+              <div class="card-image" [style.backgroundImage]="playlist.coverImageUrl ? 'url(' + playlist.coverImageUrl + ')' : ''">
+                <div class="card-overlay"></div>
+              </div>
+              <div class="card-content">
+                <h3>{{ playlist.playlistName }}</h3>
+                <p class="card-artist">
+                  <ng-container *ngIf="playlist.ownerId">
+                    <span *ngIf="playlist.ownerId === currentUser?.userId">của tôi</span>
+                    <span *ngIf="playlist.ownerId !== currentUser?.userId && playlist.ownerName">của {{ playlist.ownerName }}</span>
+                    <span *ngIf="playlist.ownerId !== currentUser?.userId && !playlist.ownerName">{{ playlist.songCount }} bài hát</span>
+                  </ng-container>
+                  <span *ngIf="!playlist.ownerId">{{ playlist.songCount }} bài hát</span>
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <!-- Empty State -->
+          <div class="empty-state" *ngIf="!isLoadingPublicPlaylists && !publicPlaylistsError && publicPlaylists.length === 0">
+            <i class="fa-solid fa-music"></i>
+            <p>Chưa có danh sách phát công khai nào</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Genres Grid View (default) -->
+      <div *ngIf="!selectedGenre && !showRanking && !showPublicPlaylists">
+        <div class="section-header">
+          <h2>Duyệt theo thể loại</h2>
+        </div>
+        
+        <div class="content-wrapper">
+          <!-- Loading State -->
+          <div class="loading-container" *ngIf="isLoading">
+            <i class="fa-solid fa-spinner fa-spin"></i>
+            <span>Đang tải danh sách thể loại...</span>
+          </div>
+
+          <!-- Error State -->
+          <div class="error-message" *ngIf="error && !isLoading">
+            <i class="fa-solid fa-exclamation-circle"></i>
+            <span>{{ error }}</span>
+          </div>
+
+          <!-- Genres Grid (including ranking card and public playlists card) -->
+          <div class="genres-grid" *ngIf="!isLoading && !error">
+            <!-- Ranking Card -->
+            <div 
+              class="genre-card ranking-card" 
+              (click)="onRankingClick()"
+              *ngIf="!isLoadingTopSongs && !topSongsError">
+              <div class="genre-card-content">
+                <div class="genre-icon">
+                  <i class="fa-solid fa-trophy"></i>
+                </div>
+                <div class="genre-info">
+                  <h3 class="genre-name">Bảng xếp hạng</h3>
+                  <p class="genre-description">
+                    Top {{ topSongs.length }} bài hát phổ biến
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Public Playlists Card -->
+            <div 
+              class="genre-card public-playlists-card" 
+              (click)="onPublicPlaylistsClick()">
+              <div class="genre-card-content">
+                <div class="genre-icon">
+                  <i class="fa-solid fa-list"></i>
+                </div>
+                <div class="genre-info">
+                  <h3 class="genre-name">Danh sách phát công khai</h3>
+                  <p class="genre-description">
+                    Khám phá các danh sách phát được chia sẻ
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Genre Cards -->
+            <div 
+              class="genre-card" 
+              *ngFor="let genre of genres"
+              (click)="onGenreClick(genre)">
+              <div class="genre-card-content">
+                <div class="genre-icon">
+                  <i class="fa-solid fa-music"></i>
+                </div>
+                <div class="genre-info">
+                  <h3 class="genre-name">{{ genre.genreName }}</h3>
+                  <p class="genre-description" *ngIf="genre.description">
+                    {{ genre.description }}
+                  </p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Empty State -->
+          <div class="empty-state" *ngIf="!isLoading && !error && genres.length === 0">
+            <i class="fa-solid fa-music"></i>
+            <p>Chưa có thể loại nào</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
