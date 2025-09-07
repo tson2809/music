@@ -1,0 +1,126 @@
+<div class="spotify-container">
+  <!-- Sidebar -->
+  <app-sidebar></app-sidebar>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <!-- Header -->
+    <app-search-header [currentUser]="currentUser" (logoutEvent)="logout()"></app-search-header>
+
+    <!-- Content -->
+    <div class="content-section">
+      <!-- Loading State -->
+      <div *ngIf="loading" class="loading-container">
+        <div class="loading-spinner"></div>
+        <p>Đang tải thông tin bài hát...</p>
+      </div>
+
+      <!-- Error State -->
+      <div *ngIf="!loading && errorMessage" class="error-container">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+        </svg>
+        <p>{{ errorMessage }}</p>
+        <button class="btn-secondary" routerLink="/home">← Quay lại trang chủ</button>
+      </div>
+
+      <!-- Song Detail -->
+      <div *ngIf="!loading && !errorMessage && song" class="song-detail-container">
+        <!-- Song Header -->
+        <div class="song-header">
+          <div class="song-cover">
+            <img 
+              [src]="song.coverImageUrl || 'https://via.placeholder.com/400x400/e0e0e0/666?text=No+Image'" 
+              [alt]="song.songTitle"
+              (error)="$event.target.src='https://via.placeholder.com/400x400/e0e0e0/666?text=No+Image'"
+            >
+          </div>
+          <div class="song-info">
+            <span class="song-type">Bài hát</span>
+            <h1>{{ song.songTitle }}</h1>
+            <div class="song-artist">
+              <a [routerLink]="['/artists', song.artistId]" class="artist-link">{{ song.artistName }}</a>
+            </div>
+            <div class="song-meta">
+              <span *ngIf="song.albumTitle">
+                Album: <a [routerLink]="['/albums-user', song.albumId]" class="meta-link">{{ song.albumTitle }}</a>
+              </span>
+              <span *ngIf="song.genreName">• Thể loại: {{ song.genreName }}</span>
+              <span *ngIf="song.releaseDate">• Phát hành: {{ formatDate(song.releaseDate) }}</span>
+            </div>
+            <div class="song-stats">
+              <div class="stat-item">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 15l-5-5 1.41-1.41L10 14.17l7.59-7.59L19 8l-9 9z"/>
+                </svg>
+                <span>{{ formatNumber(song.playCount) }} lượt nghe</span>
+              </div>
+              <div class="stat-item">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/>
+                </svg>
+                <span>{{ formatNumber(song.likeCount) }} lượt thích</span>
+              </div>
+              <div class="stat-item">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+                </svg>
+                <span>{{ formatDuration(song.durationSeconds) }}</span>
+              </div>
+            </div>
+            <div class="song-actions">
+              <button class="btn-primary play-btn" (click)="onPlayClick()">
+                <svg *ngIf="currentSongId !== song.songId || !isPlaying" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M8 5v14l11-7z"/>
+                </svg>
+                <svg *ngIf="currentSongId === song.songId && isPlaying" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M6 5h4v14H6zm8 0h4v14h-4z"/>
+                </svg>
+                {{ currentSongId === song.songId && isPlaying ? 'Tạm dừng' : 'Phát' }}
+              </button>
+              <button 
+                class="btn-like" 
+                [class.liked]="isLiked"
+                (click)="onToggleLike()"
+                [title]="isLiked ? 'Bỏ thích' : 'Thích bài hát'">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M1 21h4V9H1v12zm22-11c0-1.1-.9-2-2-2h-6.31l.95-4.57.03-.32c0-.41-.17-.79-.44-1.06L14.17 1 7.59 7.59C7.22 7.95 7 8.45 7 9v10c0 1.1.9 2 2 2h9c.83 0 1.54-.5 1.84-1.22l3.02-7.05c.09-.23.14-.47.14-.73v-2z"/>
+                </svg>
+              </button>
+              <button 
+                class="btn-favorite" 
+                [class.favorited]="isFavorited"
+                (click)="onToggleFavorite()"
+                [title]="isFavorited ? 'Bỏ khỏi yêu thích' : 'Thêm vào yêu thích'">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" [attr.fill]="isFavorited ? 'currentColor' : 'none'" stroke="currentColor" stroke-width="2">
+                  <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"/>
+                </svg>
+              </button>
+              <button class="btn-secondary" routerLink="/home">
+                ← Quay lại
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Lyrics Section -->
+        <div *ngIf="song.lyrics" class="lyrics-section">
+          <h2>Lời bài hát</h2>
+          <div class="lyrics-content">
+            <!-- Nếu lyrics có timestamp (LRC), timestamp sẽ được ẩn khi hiển thị -->
+            <pre>{{ getLyricsForDisplay() }}</pre>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Player Bar -->
+  <app-player-bar 
+    [currentTrack]="currentTrack" 
+    [progress]="progress" 
+    [volume]="volume"
+    [isFavorite]="isFavorited"
+    [currentSongId]="currentSongId"
+    (toggleFavorite)="onToggleFavorite()"></app-player-bar>
+</div>
