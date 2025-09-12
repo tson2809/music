@@ -1,0 +1,130 @@
+<footer class="player-bar">
+  <div class="player-left">
+    <div class="now-playing-image" [style.backgroundImage]="currentTrack.coverImageUrl ? 'url(' + currentTrack.coverImageUrl + ')' : 'none'"></div>
+    <div class="now-playing-info">
+      <div class="track-name-wrapper">
+        <div class="track-name">{{ currentTrack.name }}</div>
+      </div>
+      <div class="artist-name">{{ currentTrack.artist }}</div>
+    </div>
+    <button 
+      #addToPlaylistButton
+      class="add-to-playlist-button" 
+      (click)="onAddToPlaylistClick($event)"
+      [disabled]="!currentSongId || !hasPlaylists"
+      title="Thêm vào danh sách phát"
+      *ngIf="hasPlaylists">
+      <i class="fa-solid fa-circle-plus"></i>
+    </button>
+    <button 
+      class="like-button" 
+      [class.favorited]="isFavorite"
+      (click)="onLikeClick()"
+      [disabled]="!currentSongId"
+      title="{{ isFavorite ? 'Xóa khỏi yêu thích' : 'Thêm vào yêu thích' }}">
+      <i class="fa-solid fa-heart"></i>
+    </button>
+  </div>
+
+  <!-- Playlist Popup -->
+  <div class="playlist-popup" *ngIf="showPlaylistPopup" (click)="onPopupBackdropClick($event)">
+    <div class="playlist-popup-content" #playlistPopupContent [style.top.px]="popupTop" [style.left.px]="popupLeft" (click)="$event.stopPropagation()">
+      <div class="playlist-popup-header">
+        <h3>Thêm vào danh sách phát</h3>
+        <button class="playlist-popup-close" (click)="closePlaylistPopup()">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="playlist-popup-body">
+        <div class="playlist-loading" *ngIf="isLoadingPlaylists">
+          <i class="fa-solid fa-spinner fa-spin"></i>
+          <span>Đang tải...</span>
+        </div>
+        <div class="playlist-list" *ngIf="!isLoadingPlaylists && playlists.length > 0">
+          <div 
+            class="playlist-item" 
+            *ngFor="let playlist of playlists"
+            (click)="onPlaylistItemClick(playlist)">
+            <div class="playlist-item-info">
+              <div class="playlist-item-icon" *ngIf="playlist.coverImageUrl" [style.backgroundImage]="'url(' + playlist.coverImageUrl + ')'"></div>
+              <div class="playlist-item-icon default" *ngIf="!playlist.coverImageUrl">
+                <i class="fa-solid fa-music"></i>
+              </div>
+              <div class="playlist-item-details">
+                <div class="playlist-item-name">{{ playlist.playlistName }}</div>
+                <div class="playlist-item-count">{{ playlist.songCount }} bài hát</div>
+              </div>
+            </div>
+            <div class="playlist-item-check" *ngIf="playlistHasSong(playlist.playlistId)">
+              <i class="fa-solid fa-check"></i>
+            </div>
+          </div>
+        </div>
+        <div class="playlist-empty" *ngIf="!isLoadingPlaylists && playlists.length === 0">
+          <p>Bạn chưa có danh sách phát nào</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="player-center">
+    <div class="player-controls">
+      <button class="control-button" type="button" (click)="onShuffleClick()">
+        <i class="fa-solid fa-shuffle icon-15"></i>
+      </button>
+      <button class="control-button" type="button" (click)="onPreviousClick()">
+        <i class="fa-solid fa-backward-step icon-15"></i>
+      </button>
+      <button class="control-button play" type="button" (click)="playPause.emit()">
+        <i *ngIf="!isPlaying" class="fa-solid fa-play"></i>
+        <i *ngIf="isPlaying" class="fa-solid fa-pause"></i>
+      </button>
+      <button class="control-button" type="button" (click)="onNextClick()">
+        <i class="fa-solid fa-forward-step icon-15"></i>
+      </button>
+      <button class="control-button" type="button" (click)="onReplayClick()">
+        <i class="fa-solid fa-repeat icon-15"></i>
+      </button>
+    </div>
+    <div class="progress-bar">
+      <span class="time">{{ formatTime(currentTime) }}</span>
+      <div class="progress-container" [style.--progress-width]="(duration ? (currentTime / duration) * 100 : 0) + '%'">
+        <div class="buffered-progress" [style.width.%]="bufferedProgress"></div>
+        <input
+          type="range"
+          class="progress-range"
+          min="0"
+          [max]="duration || 0"
+          [value]="currentTime"
+          (input)="onRangeChange($event)">
+      </div>
+      <span class="time">{{ formatTime(duration) }}</span>
+    </div>
+  </div>
+
+  <div class="player-right">
+    <button class="control-button" type="button" (click)="onToggleLyrics()" [class.active]="showLyrics" title="Hiển thị lyrics">
+      <i class="fa-solid fa-list"></i>
+    </button>
+    <button class="control-button" type="button" (click)="onMuteToggle()">
+      <i class="fa-solid" [ngClass]="volumeIcon"></i>
+    </button>
+    <input
+      class="volume-range"
+      type="range"
+      min="0"
+      max="100"
+      [value]="volume"
+      (input)="onVolumeChange($event)">
+  </div>
+
+  <!-- Hidden audio player -->
+  <audio
+    #audioPlayer
+    (timeupdate)="onAudioTimeUpdate($event)"
+    (durationchange)="onAudioDurationChange($event)"
+    (ended)="onAudioEnded()"
+    style="display: none;">
+  </audio>
+</footer>
+

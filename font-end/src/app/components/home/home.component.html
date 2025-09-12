@@ -1,0 +1,155 @@
+<div class="spotify-container">
+  <!-- Sidebar -->
+  <app-sidebar></app-sidebar>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <!-- Header -->
+    <app-search-header [currentUser]="currentUser" (logoutEvent)="logout()"></app-search-header>
+
+    <!-- Content -->
+    <div class="content-section" [class.with-lyrics]="showLyrics">
+      <!-- Recently Played Section -->
+      <section class="recently-played-section" *ngIf="currentUser && recentlyPlayed.length > 0">
+        <div class="recently-played-header">
+          <h2>Mới phát gần đây</h2>
+          <a href="#" class="show-all-link" (click)="toggleShowAllRecentlyPlayed(); $event.preventDefault()" *ngIf="hasMoreRecentlyPlayed()">
+            {{ showAllRecentlyPlayed ? 'Thu gọn' : 'Hiện tất cả' }}
+          </a>
+        </div>
+        <div class="recently-played-container" *ngIf="!isLoadingRecentlyPlayed && recentlyPlayed.length > 0">
+          <div class="cards-grid">
+            <div 
+              class="song-card" 
+              *ngFor="let item of getDisplayedRecentlyPlayed()"
+              [class.active]="item.type === 'song' && item.id === currentSongId"
+              (click)="onRecentlyPlayedItemClick(item)"
+            >
+              <div class="card-image" [style.backgroundImage]="item.imageUrl ? 'url(' + getImageUrl(item.imageUrl) + ')' : ''">
+                <div class="card-overlay"></div>
+                <button class="play-button" type="button" (click)="onRecentlyPlayedPlayClick($event, item)" *ngIf="item.type === 'song'">
+                  <svg *ngIf="item.id !== currentSongId || !isPlaying" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M8 5v14l11-7z"/>
+                  </svg>
+                  <svg *ngIf="item.id === currentSongId && isPlaying" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M6 5h4v14H6zm8 0h4v14h-4z"/>
+                  </svg>
+                </button>
+              </div>
+              <div class="card-content">
+                <h3>{{ item.title }}</h3>
+                <p class="card-artist" *ngIf="item.subtitle">
+                  <a [routerLink]="[]" (click)="onRecentlyPlayedArtistClick($event, item)">
+                    {{ item.subtitle }}
+                  </a>
+                </p>
+              </div>
+            </div>
+            <!-- More indicator card -->
+            <div 
+              class="song-card more-indicator" 
+              *ngIf="!showAllRecentlyPlayed && hasMoreRecentlyPlayed()"
+              (click)="toggleShowAllRecentlyPlayed()"
+            >
+              <div class="card-image more-indicator-image">
+                <div class="more-indicator-content">
+                  <span class="more-indicator-text">...</span>
+                  <span class="more-indicator-label">+{{ recentlyPlayed.length - 5 }} bài nữa</span>
+                </div>
+              </div>
+              <div class="card-content">
+                <h3>Xem thêm</h3>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="recently-played-empty" *ngIf="!isLoadingRecentlyPlayed && recentlyPlayed.length === 0">
+          <p>Chưa có bài hát nào được phát gần đây</p>
+        </div>
+        <div class="recently-played-loading" *ngIf="isLoadingRecentlyPlayed">
+          <p>Đang tải...</p>
+        </div>
+      </section>
+
+      <div class="section-header" [class.full-width]="showLyrics">
+        <h2>Danh sách nhạc</h2>
+      </div>
+      <div class="content-wrapper">
+        <section class="section">
+
+        <ng-container *ngIf="isLoadingSongs">
+          <div class="song-state">Đang tải danh sách bài hát...</div>
+        </ng-container>
+
+        <div class="song-state" *ngIf="!isLoadingSongs && songError">{{ songError }}</div>
+
+        <div class="cards-grid" *ngIf="!isLoadingSongs && songs.length > 0">
+          <div class="song-card" *ngFor="let song of songs" [class.active]="song.songId === currentSongId" (click)="onSongCardClick(song)">
+            <div class="card-image" [style.backgroundImage]="song.coverImageUrl ? 'url(' + song.coverImageUrl + ')' : ''">
+              <div class="card-overlay"></div>
+              <button class="play-button" type="button" (click)="onSongPlayClick($event, song)">
+                <svg *ngIf="song.songId !== currentSongId || !isPlaying" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M8 5v14l11-7z"/>
+                </svg>
+                <svg *ngIf="song.songId === currentSongId && isPlaying" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M6 5h4v14H6zm8 0h4v14h-4z"/>
+                </svg>
+              </button>
+            </div>
+            <div class="card-content">
+              <h3>{{ song.songTitle }}</h3>
+              <p class="card-artist">
+                <a [routerLink]="['/artists', song.artistId]" (click)="$event.stopPropagation()">
+                  {{ song.artistName }}
+                </a>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <div class="song-state" *ngIf="!isLoadingSongs && songs.length === 0 && !songError">
+          Chưa có bài hát nào được tải lên.
+        </div>
+      </section>
+
+      <!-- Lyrics Panel -->
+      <div class="lyrics-panel" *ngIf="showLyrics">
+        <div class="lyrics-content">
+          <div *ngIf="isLoadingLyrics" class="lyrics-loading">
+            <i class="fa-solid fa-spinner fa-spin"></i>
+            <span>Đang tải lyrics...</span>
+          </div>
+          <div *ngIf="!isLoadingLyrics && currentSongId && lyrics" class="lyrics-text">
+            <h4>{{ currentTrackName }}</h4>
+            <p class="lyrics-artist">{{ currentArtistName }}</p>
+            <!-- If lyrics have timestamps, show with highlight -->
+            <div *ngIf="hasTimestamps && lyricsLines.length > 0" class="lyrics-body">
+              <div 
+                *ngFor="let line of lyricsLines; let i = index" 
+                class="lyrics-line"
+                [class.active]="i === activeLineIndex"
+                (click)="onLyricsLineClick(line)">
+                {{ line.text }}
+              </div>
+            </div>
+            <!-- If lyrics don't have timestamps, show as plain text -->
+            <div *ngIf="!hasTimestamps" class="lyrics-body lyrics-plain">
+              <div class="lyrics-plain-text">{{ lyrics }}</div>
+            </div>
+          </div>
+          <div *ngIf="!isLoadingLyrics && currentSongId && !lyrics" class="lyrics-empty">
+            <i class="fa-solid fa-music"></i>
+            <p>Chưa có lyrics cho bài hát này</p>
+          </div>
+          <div *ngIf="!isLoadingLyrics && !currentSongId" class="lyrics-empty">
+            <i class="fa-solid fa-headphones"></i>
+            <p>Chọn bài hát để xem lyrics</p>
+          </div>
+        </div>
+      </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+
