@@ -1,0 +1,195 @@
+<div class="spotify-container">
+  <!-- Sidebar -->
+  <app-sidebar></app-sidebar>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <!-- Header -->
+    <app-search-header [currentUser]="currentUser" (logoutEvent)="logout()"></app-search-header>
+
+    <!-- Content -->
+    <div class="my-songs-container">
+      <div class="management-header">
+        <div class="header-top">
+          <div class="header-title-section">
+            <div class="header-icon">
+              <i class="fa-solid fa-music"></i>
+            </div>
+            <div>
+              <h1>Bài Hát Của Tôi</h1>
+              <p class="header-subtitle">Quản lý các bài hát bạn đã tải lên</p>
+            </div>
+          </div>
+          <div class="header-actions">
+            <a routerLink="/upload" class="btn btn-primary">
+              <i class="fa-solid fa-cloud-arrow-up"></i>
+              Upload bài hát mới
+            </a>
+          </div>
+        </div>
+        
+        <div class="stats-row">
+          <div class="stat-card">
+            <i class="fa-solid fa-music stat-icon"></i>
+            <div class="stat-content">
+              <span class="stat-value">{{ totalCount }}</span>
+              <span class="stat-label">Tổng bài hát</span>
+            </div>
+          </div>
+          <div class="stat-card" *ngIf="getCountByStatus(0) > 0">
+            <i class="fa-solid fa-clock stat-icon pending"></i>
+            <div class="stat-content">
+              <span class="stat-value">{{ getCountByStatus(0) }}</span>
+              <span class="stat-label">Chờ duyệt</span>
+            </div>
+          </div>
+          <div class="stat-card" *ngIf="getCountByStatus(1) > 0">
+            <i class="fa-solid fa-circle-check stat-icon approved"></i>
+            <div class="stat-content">
+              <span class="stat-value">{{ getCountByStatus(1) }}</span>
+              <span class="stat-label">Đã duyệt</span>
+            </div>
+          </div>
+          <div class="stat-card" *ngIf="getCountByStatus(2) > 0">
+            <i class="fa-solid fa-circle-xmark stat-icon rejected"></i>
+            <div class="stat-content">
+              <span class="stat-value">{{ getCountByStatus(2) }}</span>
+              <span class="stat-label">Bị từ chối</span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Filter section -->
+        <div class="filter-bar">
+          <div class="filter-label">
+            <i class="fa-solid fa-filter"></i>
+            <span>Lọc theo trạng thái</span>
+          </div>
+          <select 
+            id="statusFilter"
+            [(ngModel)]="selectedStatus" 
+            (ngModelChange)="onStatusFilterChange()"
+            class="status-filter"
+          >
+            <option [ngValue]="null">📋 Tất cả bài hát</option>
+            <option [ngValue]="0">⏳ Chờ duyệt</option>
+            <option [ngValue]="1">✅ Đã duyệt</option>
+            <option [ngValue]="2">❌ Bị từ chối</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Error message -->
+      <div class="error-message" *ngIf="errorMessage">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        {{ errorMessage }}
+      </div>
+
+      <!-- Loading -->
+      <div *ngIf="isLoading" class="loading-container">
+        <div class="loading-spinner"></div>
+        <p>Đang tải...</p>
+      </div>
+
+      <!-- Songs list -->
+      <div *ngIf="!isLoading && mySongs.length > 0" class="table-container">
+    <table class="songs-table">
+      <thead>
+        <tr>
+          <th></th>
+          <th>Ảnh bìa</th>
+          <th>Tên bài hát</th>
+          <th>Album</th>
+          <th>Thể loại</th>
+          <th>Thời lượng</th>
+          <th>Lượt nghe</th>
+          <th>Lượt thích</th>
+          <th>Ngày upload</th>
+          <th>Trạng thái</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let song of mySongs" [class.playing]="currentSongId === song.songId && isPlaying">
+          <td>
+            <button 
+              *ngIf="song.approvalStatus === 'Approved'"
+              (click)="onSongPlayClick(song)" 
+              class="play-btn" 
+              [title]="(currentSongId === song.songId && isPlaying) ? 'Tạm dừng' : 'Phát'">
+              <svg *ngIf="!(currentSongId === song.songId && isPlaying)" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M8 5v14l11-7z"/>
+              </svg>
+              <svg *ngIf="currentSongId === song.songId && isPlaying" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
+              </svg>
+            </button>
+          </td>
+          <td>
+            <div class="song-cover">
+              <img 
+                *ngIf="song.coverImageUrl" 
+                [src]="song.coverImageUrl" 
+                [alt]="song.songTitle"
+                loading="lazy"
+              >
+              <div *ngIf="!song.coverImageUrl" class="no-image">
+                <i class="fa-solid fa-music"></i>
+              </div>
+            </div>
+          </td>
+          <td class="song-title">{{ song.songTitle }}</td>
+          <td>{{ song.albumTitle || '-' }}</td>
+          <td>{{ song.genreName || '-' }}</td>
+          <td>{{ formatDuration(song.durationSeconds) }}</td>
+          <td>{{ song.playCount }}</td>
+          <td>{{ song.likeCount }}</td>
+          <td>{{ formatDate(song.createdAt) }}</td>
+          <td>
+            <span [class]="'status-badge ' + getStatusClass(song.approvalStatus)">
+              {{ getStatusLabel(song.approvalStatus) }}
+            </span>
+            <div *ngIf="song.rejectionReason" class="rejection-reason">
+              <span class="reason-label">Lý do:</span> {{ song.rejectionReason }}
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+      <!-- Empty state -->
+      <div *ngIf="!isLoading && mySongs.length === 0" class="no-data-container">
+        <div class="empty-icon">
+          <i class="fa-solid fa-music"></i>
+        </div>
+        <p>Bạn chưa upload bài hát nào</p>
+        <p class="subtitle">Hãy tạo bài hát đầu tiên của bạn!</p>
+        <a routerLink="/upload" class="btn btn-primary">
+          <i class="fa-solid fa-cloud-arrow-up"></i>
+          Upload bài hát mới
+        </a>
+      </div>
+
+      <!-- Pagination -->
+      <div *ngIf="!isLoading && totalPages > 1" class="pagination">
+    <button 
+      (click)="previousPage()" 
+      [disabled]="currentPage === 1"
+      class="pagination-btn"
+    >
+      ← Trước
+    </button>
+    <span class="pagination-info">
+      Trang {{ currentPage }} / {{ totalPages }} (Tổng: {{ totalCount }} bài hát)
+    </span>
+    <button 
+      (click)="nextPage()" 
+      [disabled]="currentPage === totalPages"
+      class="pagination-btn"
+    >
+      Sau →
+    </button>
+  </div>
+</div>
+  </main>
+</div>

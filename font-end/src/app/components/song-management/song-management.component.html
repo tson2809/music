@@ -1,0 +1,212 @@
+<div class="spotify-container">
+  <!-- Sidebar -->
+  <app-sidebar></app-sidebar>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <!-- Header -->
+    <app-search-header [currentUser]="currentUser" (logoutEvent)="logout()"></app-search-header>
+
+    <!-- Content -->
+    <div class="content-section">
+      <div class="management-header">
+        <div class="header-top">
+          <h1>Quản Lý Bài Hát</h1>
+          <div class="header-stats">
+            <span class="stat-badge">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+              </svg>
+              Tổng: {{ totalCount }} bài hát
+            </span>
+          </div>
+        </div>
+
+        <div class="filter-bar">
+          <div class="filter-group">
+            <label for="genreFilter" class="filter-label">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M3 18h6v-2H3v2zM3 6v2h18V6H3zm0 7h12v-2H3v2z"/>
+              </svg>
+              Thể loại:
+            </label>
+            <select 
+              id="genreFilter"
+              [(ngModel)]="selectedGenreId" 
+              (change)="onGenreChange()"
+              class="genre-select">
+              <option [ngValue]="null">Tất cả thể loại</option>
+              <option *ngFor="let genre of genres" [ngValue]="genre.genreId">
+                {{ genre.genreName }}
+              </option>
+            </select>
+          </div>
+        </div>
+
+        <div class="search-bar">
+          <div class="search-input-wrapper">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="search-icon">
+              <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+            </svg>
+            <input 
+              type="text" 
+              [(ngModel)]="searchQuery"
+              (keyup.enter)="onSearch()"
+              placeholder="Tìm kiếm bài hát, nghệ sĩ..."
+              class="search-input"
+            />
+            <button *ngIf="searchQuery" (click)="clearSearch()" class="clear-btn">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+              </svg>
+            </button>
+          </div>
+          <button (click)="onSearch()" class="search-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+            </svg>
+            Tìm kiếm
+          </button>
+        </div>
+      </div>
+
+      <!-- Messages -->
+      <div class="error-message" *ngIf="errorMessage">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+        </svg>
+        {{ errorMessage }}
+      </div>
+
+      <div class="success-message" *ngIf="successMessage">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+        </svg>
+        {{ successMessage }}
+      </div>
+
+      <!-- Loading State -->
+      <div *ngIf="loading" class="loading-container">
+        <div class="loading-spinner"></div>
+        <p>Đang tải...</p>
+      </div>
+
+      <!-- Songs Table -->
+      <div *ngIf="!loading" class="table-container">
+        <table class="songs-table">
+          <thead>
+            <tr>
+              <th class="col-cover">Ảnh</th>
+              <th class="col-title">Tên Bài Hát</th>
+              <th class="col-artist">Nghệ Sĩ</th>
+              <th class="col-album">Album</th>
+              <th class="col-genre">Thể Loại</th>
+              <th class="col-duration">Thời Lượng</th>
+              <th class="col-stats">Lượt Nghe</th>
+              <th class="col-status">Trạng Thái</th>
+              <th class="col-date">Ngày Tạo</th>
+              <th class="col-actions">Hành Động</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let song of songs" class="song-row">
+              <td class="col-cover">
+                <div class="cover-image">
+                  <img *ngIf="song.coverImageUrl" [src]="song.coverImageUrl" [alt]="song.songTitle">
+                  <div *ngIf="!song.coverImageUrl" class="no-image">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+                    </svg>
+                  </div>
+                </div>
+              </td>
+              <td class="col-title">
+                <div class="song-info">
+                  <span class="song-title">{{ song.songTitle }}</span>
+                </div>
+              </td>
+              <td class="col-artist">{{ song.artistName }}</td>
+              <td class="col-album">{{ song.albumTitle || 'N/A' }}</td>
+              <td class="col-genre">{{ song.genreName || 'N/A' }}</td>
+              <td class="col-duration">{{ formatDuration(song.durationSeconds) }}</td>
+              <td class="col-stats">
+                <span class="stat-value">{{ formatNumber(song.playCount) }}</span>
+              </td>
+              <td class="col-status">
+                <span [class]="'status-badge ' + getStatusClass(song.approvalStatus)">
+                  {{ getStatusLabel(song.approvalStatus) }}
+                </span>
+              </td>
+              <td class="col-date">{{ formatDate(song.createdAt) }}</td>
+              <td class="col-actions">
+                <div class="action-buttons">
+                  <button (click)="onPlayClick(song)" class="action-btn play-btn" [title]="currentSongId === song.songId && isPlaying ? 'Tạm dừng' : 'Phát'">
+                    <svg *ngIf="currentSongId !== song.songId || !isPlaying" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M8 5v14l11-7z"/>
+                    </svg>
+                    <svg *ngIf="currentSongId === song.songId && isPlaying" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M6 5h4v14H6zm8 0h4v14h-4z"/>
+                    </svg>
+                  </button>
+                  <button (click)="deleteSong(song)" class="action-btn delete-btn" title="Xóa">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                      <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                    </svg>
+                  </button>
+                </div>
+              </td>
+            </tr>
+            <tr *ngIf="songs.length === 0">
+              <td colspan="10" class="no-data">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+                </svg>
+                <p>Không tìm thấy bài hát nào</p>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <!-- Pagination -->
+      <div *ngIf="!loading && songs.length > 0" class="pagination">
+        <button 
+          (click)="previousPage()" 
+          [disabled]="currentPage === 1"
+          class="pagination-btn"
+        >
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M15.41 7.41L14 6l-6 6 6 6 1.41-1.41L10.83 12z"/>
+          </svg>
+          Trước
+        </button>
+
+        <div class="pagination-pages">
+          <button 
+            *ngFor="let page of getPageNumbers()"
+            (click)="goToPage(page)"
+            [class.active]="page === currentPage"
+            class="page-btn"
+          >
+            {{ page }}
+          </button>
+        </div>
+
+        <button 
+          (click)="nextPage()" 
+          [disabled]="currentPage === totalPages"
+          class="pagination-btn"
+        >
+          Sau
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M10 6L8.59 7.41 13.17 12l-4.58 4.59L10 18l6-6z"/>
+          </svg>
+        </button>
+      </div>
+    </div>
+  </main>
+
+  <!-- Player Bar -->
+  <app-player-bar [currentTrack]="currentTrack" [progress]="progress" [volume]="volume"></app-player-bar>
+</div>
+

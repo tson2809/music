@@ -1,0 +1,188 @@
+<div class="spotify-container">
+  <!-- Sidebar -->
+  <app-sidebar></app-sidebar>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <!-- Header -->
+    <app-search-header [currentUser]="currentUser" (logoutEvent)="logout()"></app-search-header>
+
+    <!-- Content -->
+    <div class="song-approval-container">
+      <div class="management-header">
+        <div class="header-top">
+          <h1>Duyệt Bài Hát</h1>
+          <div class="header-stats">
+            <span class="stat-badge">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+              </svg>
+              Chờ duyệt: {{ totalCount }} bài
+            </span>
+          </div>
+        </div>
+
+        <div class="search-bar">
+          <div class="search-input-wrapper">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="search-icon">
+              <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+            </svg>
+            <input 
+              type="text" 
+              [(ngModel)]="searchText" 
+              (keyup.enter)="onSearch()"
+              placeholder="Tìm kiếm theo tên bài hát hoặc nghệ sĩ..." 
+              class="search-input"
+            >
+            <button *ngIf="searchText" (click)="clearSearch()" class="clear-btn">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+              </svg>
+            </button>
+          </div>
+          <button (click)="onSearch()" class="search-btn">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+            </svg>
+            Tìm kiếm
+          </button>
+        </div>
+      </div>
+
+      <!-- Messages -->
+      <div class="error-message" *ngIf="errorMessage">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+        </svg>
+        {{ errorMessage }}
+      </div>
+      <div class="success-message" *ngIf="successMessage">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+        </svg>
+        {{ successMessage }}
+      </div>
+
+      <!-- Loading -->
+      <div *ngIf="isLoading" class="loading-container">
+        <div class="loading-spinner"></div>
+        <p>Đang tải...</p>
+      </div>
+
+      <!-- Pending songs list -->
+      <div *ngIf="!isLoading && pendingSongs.length > 0" class="table-container">
+    <table class="songs-table">
+      <thead>
+        <tr>
+          <th>Ảnh bìa</th>
+          <th>Tên bài hát</th>
+          <th>Nghệ sĩ</th>
+          <th>Album</th>
+          <th>Thể loại</th>
+          <th>Thời lượng</th>
+          <th>Ngày upload</th>
+          <th>Thao tác</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let song of pendingSongs">
+          <td>
+            <div class="song-cover">
+              <img 
+                *ngIf="song.coverImageUrl" 
+                [src]="song.coverImageUrl" 
+                [alt]="song.songTitle"
+                loading="lazy"
+              >
+              <div *ngIf="!song.coverImageUrl" class="no-image">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+                </svg>
+              </div>
+            </div>
+          </td>
+          <td class="song-title">{{ song.songTitle }}</td>
+          <td>{{ song.artistName }}</td>
+          <td>{{ song.albumTitle || '-' }}</td>
+          <td>{{ song.genreName || '-' }}</td>
+          <td>{{ formatDuration(song.durationSeconds) }}</td>
+          <td>{{ song.createdAt | date:'dd/MM/yyyy' }}</td>
+          <td>
+            <div class="action-buttons">
+              <button 
+                (click)="approveSong(song.songId)" 
+                class="btn btn-approve"
+                title="Duyệt bài hát"
+              >
+                ✓ Duyệt
+              </button>
+              <button 
+                (click)="openRejectModal(song.songId)" 
+                class="btn btn-reject"
+                title="Từ chối bài hát"
+              >
+                ✗ Từ chối
+              </button>
+              <audio controls class="audio-preview">
+                <source [src]="song.audioFileUrl" type="audio/mpeg">
+              </audio>
+            </div>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+      <!-- Empty state -->
+      <div *ngIf="!isLoading && pendingSongs.length === 0" class="no-data-container">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+        </svg>
+        <p>Không có bài hát nào chờ duyệt</p>
+        <p class="subtitle">Tất cả bài hát đã được xử lý</p>
+      </div>
+
+      <!-- Pagination -->
+      <div *ngIf="!isLoading && totalPages > 1" class="pagination">
+    <button 
+      (click)="previousPage()" 
+      [disabled]="currentPage === 1"
+      class="pagination-btn"
+    >
+      ← Trước
+    </button>
+    <span class="pagination-info">
+      Trang {{ currentPage }} / {{ totalPages }} (Tổng: {{ totalCount }} bài hát)
+    </span>
+    <button 
+      (click)="nextPage()" 
+      [disabled]="currentPage === totalPages"
+      class="pagination-btn"
+    >
+      Sau →
+    </button>
+  </div>
+</div>
+  </main>
+
+  <!-- Player Bar -->
+  <app-player-bar [currentTrack]="currentTrack"></app-player-bar>
+</div>
+
+<!-- Reject Modal -->
+<div *ngIf="showRejectModal" class="modal-overlay" (click)="closeRejectModal()">
+  <div class="modal-content" (click)="$event.stopPropagation()">
+    <h3>Từ chối bài hát</h3>
+    <p>Vui lòng nhập lý do từ chối (không bắt buộc):</p>
+    <textarea 
+      [(ngModel)]="rejectionReason" 
+      rows="4" 
+      placeholder="Ví dụ: Nội dung không phù hợp, chất lượng âm thanh kém..."
+      class="rejection-textarea"
+    ></textarea>
+    <div class="modal-actions">
+      <button (click)="closeRejectModal()" class="btn btn-secondary">Hủy</button>
+      <button (click)="confirmReject()" class="btn btn-reject">Xác nhận từ chối</button>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,251 @@
+<div class="spotify-container">
+  <!-- Sidebar -->
+  <app-sidebar></app-sidebar>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <!-- Header -->
+    <app-search-header [currentUser]="currentUser" (logoutEvent)="logout()"></app-search-header>
+
+    <!-- Content -->
+    <div class="content-section">
+      <div class="upload-container">
+        <div class="upload-card">
+          <div class="upload-header">
+            <div class="logo">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="music-icon">
+                <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+              </svg>
+            </div>
+            <h1>Upload Nhạc</h1>
+          </div>
+
+    <form [formGroup]="uploadForm" (ngSubmit)="onSubmit()" class="upload-form">
+      <!-- File Upload -->
+      <div class="form-group">
+        <label for="audioFile">File Nhạc *</label>
+        <div class="file-upload-wrapper">
+          <input
+            type="file"
+            id="audioFile"
+            accept="audio/*,.mp3,.wav,.m4a,.flac,.ogg"
+            (change)="onFileSelected($event)"
+            [class.error]="audioFile?.invalid && audioFile?.touched"
+            class="file-input"
+          />
+          <label for="audioFile" class="file-label">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="upload-icon">
+              <path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/>
+            </svg>
+            <span *ngIf="!fileName">
+              <strong>Chọn file nhạc để tải lên</strong><br>
+              <small>Hỗ trợ: MP3, WAV, M4A, FLAC, OGG (Tối đa 50MB)</small>
+            </span>
+            <span *ngIf="fileName">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" style="width: 24px; height: 24px; color: #1db954; margin-bottom: 8px;">
+                <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+              </svg><br>
+              <span class="file-name">{{ fileName }}</span>
+            </span>
+          </label>
+          <div *ngIf="fileSize > 0" class="file-info">
+            Kích thước: {{ formatFileSize(fileSize) }}
+          </div>
+        </div>
+        <div class="error-message" *ngIf="audioFile?.invalid && audioFile?.touched">
+          <span *ngIf="audioFile?.errors?.['required']">Vui lòng chọn file nhạc</span>
+        </div>
+      </div>
+
+      <!-- Image Upload -->
+      <div class="form-group">
+        <label for="imageFile">Ảnh Bìa Bài Hát</label>
+        <div class="image-upload-wrapper">
+          <input
+            type="file"
+            id="imageFile"
+            accept="image/*,.jpg,.jpeg,.png,.gif,.webp"
+            (change)="onImageSelected($event)"
+            class="file-input"
+          />
+          
+          <!-- Upload Area (when no image) -->
+          <label for="imageFile" class="image-label" *ngIf="!imagePreview">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="upload-icon">
+              <path d="M21 19V5c0-1.1-.9-2-2-2H5c-1.1 0-2 .9-2 2v14c0 1.1.9 2 2 2h14c1.1 0 2-.9 2-2zM8.5 13.5l2.5 3.01L14.5 12l4.5 6H5l3.5-4.5z"/>
+            </svg>
+            <span>
+              <strong>Chọn ảnh bìa</strong><br>
+              <small>JPG, PNG, GIF, WEBP (Tối đa 10MB)</small>
+            </span>
+          </label>
+
+          <!-- Image Preview (when image selected) -->
+          <div class="image-preview-container" *ngIf="imagePreview">
+            <img [src]="imagePreview" alt="Preview" class="image-preview">
+            <div class="image-overlay">
+              <button type="button" class="change-image-btn" (click)="removeImage()">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                </svg>
+                Xóa ảnh
+              </button>
+              <label for="imageFile" class="change-image-btn">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                </svg>
+                Đổi ảnh
+              </label>
+            </div>
+            <div class="image-info" *ngIf="imageFileSize > 0">
+              {{ imageFileName }} - {{ formatFileSize(imageFileSize) }}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Song Title -->
+      <div class="form-group">
+        <label for="songTitle">Tên Bài Hát *</label>
+        <div class="input-wrapper">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="input-icon">
+            <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+          </svg>
+          <input
+            type="text"
+            id="songTitle"
+            formControlName="songTitle"
+            placeholder="Nhập tên bài hát"
+            [class.error]="songTitle?.invalid && songTitle?.touched"
+          />
+        </div>
+        <div class="error-message" *ngIf="songTitle?.invalid && songTitle?.touched">
+          <span *ngIf="songTitle?.errors?.['required']">Vui lòng nhập tên bài hát</span>
+          <span *ngIf="songTitle?.errors?.['maxlength']">Tên bài hát không được quá 200 ký tự</span>
+        </div>
+      </div>
+
+      <!-- Artist (Auto from logged-in user) -->
+      <div class="form-group">
+        <label for="artistName">Nghệ Sĩ</label>
+        <div class="input-wrapper">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="input-icon">
+            <path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"/>
+          </svg>
+          <input
+            type="text"
+            id="artistName"
+            [value]="currentArtistName || 'Đang tải...'"
+            readonly
+            class="readonly-input"
+            title="Nghệ sĩ được lấy từ tài khoản đăng nhập của bạn"
+          />
+        </div>
+      </div>
+
+      <!-- Album -->
+      <div class="form-group">
+        <label for="albumId">Album</label>
+        <div class="input-wrapper">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="input-icon">
+            <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+          </svg>
+          <select
+            id="albumId"
+            formControlName="albumId"
+            [disabled]="loadingAlbums || !artistId?.value || artistId?.value === 0"
+          >
+            <option [value]="null">-- Chọn album (tùy chọn) --</option>
+            <option *ngFor="let album of albums" [value]="album.albumId">
+              {{ album.albumTitle }}
+            </option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Genre -->
+      <div class="form-group">
+        <label for="genreId">Thể Loại</label>
+        <div class="input-wrapper">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="input-icon">
+            <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+          </svg>
+          <select
+            id="genreId"
+            formControlName="genreId"
+            [disabled]="loadingGenres"
+          >
+            <option [value]="null">-- Chọn thể loại (tùy chọn) --</option>
+            <option *ngFor="let genre of genres" [value]="genre.genreId">
+              {{ genre.genreName }}
+            </option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Release Date -->
+      <div class="form-group">
+        <label for="releaseDate">Ngày Phát Hành</label>
+        <div class="input-wrapper">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="input-icon">
+            <path d="M19 3h-1V1h-2v2H8V1H6v2H5c-1.11 0-1.99.9-1.99 2L3 19c0 1.1.89 2 2 2h14c1.1 0 2-.9 2-2V5c0-1.1-.9-2-2-2zm0 16H5V8h14v11zM7 10h5v5H7z"/>
+          </svg>
+          <input
+            type="date"
+            id="releaseDate"
+            formControlName="releaseDate"
+          />
+        </div>
+      </div>
+
+      <!-- Lyrics -->
+      <div class="form-group">
+        <label for="lyrics">Lời Bài Hát</label>
+        <textarea
+          id="lyrics"
+          formControlName="lyrics"
+          placeholder="Nhập lời bài hát (nếu muốn lời bài hát chạy theo nhạc thì nhập kiểu [xx:xx:xx]lời bài hát) 
+Ví dụ: [00:05:11]Em của ngày hôm qua"
+          rows="5"
+          class="textarea-input"
+        ></textarea>
+      </div>
+
+      <!-- Error Message -->
+      <div class="error-message server-error" *ngIf="errorMessage">
+        {{ errorMessage }}
+      </div>
+
+      <!-- Success Message -->
+      <div class="success-message" *ngIf="successMessage">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="success-icon">
+          <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+        </svg>
+        {{ successMessage }}
+      </div>
+
+      <!-- Submit Button -->
+      <button type="submit" class="upload-button" [disabled]="loading">
+        <span *ngIf="!loading">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="button-icon">
+            <path d="M9 16h6v-6h4l-7-7-7 7h4zm-4 2h14v2H5z"/>
+          </svg>
+          Upload Nhạc
+        </span>
+        <span *ngIf="loading" class="loading-spinner">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="spinner">
+            <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4" fill="none" opacity="0.25"/>
+            <path fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z" opacity="0.75"/>
+          </svg>
+          Đang upload...
+        </span>
+      </button>
+    </form>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Player Bar -->
+  <app-player-bar [currentTrack]="currentTrack" [progress]="progress" [volume]="volume"></app-player-bar>
+</div>
