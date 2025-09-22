@@ -1,0 +1,95 @@
+<div class="spotify-container">
+  <!-- Sidebar -->
+  <app-sidebar></app-sidebar>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <!-- Header -->
+    <app-search-header [currentUser]="currentUser" (logoutEvent)="logout()"></app-search-header>
+
+    <!-- Content -->
+    <div class="content-section">
+      <section class="section">
+        <div class="section-header">
+          <div>
+            <h2>❤️ Bài Hát Yêu Thích</h2>
+            <p>{{ favoriteSongs.length }} bài hát trong danh sách yêu thích của bạn</p>
+          </div>
+        </div>
+
+        <!-- Error Message -->
+        <div class="error-message" *ngIf="errorMessage">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+          </svg>
+          {{ errorMessage }}
+        </div>
+
+        <!-- Loading State -->
+        <div *ngIf="loading" class="loading-container">
+          <div class="loading-spinner"></div>
+          <p>Đang tải danh sách yêu thích...</p>
+        </div>
+
+        <!-- Empty State -->
+        <div *ngIf="!loading && favoriteSongs.length === 0" class="empty-state">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="empty-icon">
+            <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+          </svg>
+          <h3>Chưa có bài hát yêu thích</h3>
+          <p>Hãy khám phá và thêm những bài hát bạn yêu thích vào danh sách này!</p>
+          <button class="btn-primary" routerLink="/home">
+            Khám phá ngay
+          </button>
+        </div>
+
+        <!-- Songs Grid -->
+        <div *ngIf="!loading && favoriteSongs.length > 0" class="cards-grid">
+          <div class="card" *ngFor="let song of favoriteSongs" [class.playing]="isPlayingSong(song.songId)" (click)="navigateToSong(song, $event)">
+            <div class="card-image" (click)="navigateToSong(song, $event)">
+              <img 
+                [src]="song.coverImageUrl || 'https://via.placeholder.com/300x300/e0e0e0/666?text=No+Image'" 
+                [alt]="song.songTitle"
+                (error)="$event.target.src='https://via.placeholder.com/300x300/e0e0e0/666?text=No+Image'"
+              >
+              <div class="card-overlay" [class.visible]="isPlayingSong(song.songId)">
+                <button class="play-button" [class.playing]="isPlayingSong(song.songId)" (click)="playSong(song); $event.stopPropagation()" [title]="isPlayingSong(song.songId) ? 'Tạm dừng' : 'Phát'">
+                  <svg *ngIf="!isPlayingSong(song.songId)" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M8 5v14l11-7z"/>
+                  </svg>
+                  <svg *ngIf="isPlayingSong(song.songId)" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
+                  </svg>
+                </button>
+                <button class="remove-button" (click)="removeFromFavorites(song); $event.stopPropagation()" title="Xóa khỏi yêu thích">
+                  <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                  </svg>
+                </button>
+              </div>
+            </div>
+            <div class="card-content">
+              <h3 (click)="navigateToSong(song, $event)" class="song-title-link">{{ song.songTitle }}</h3>
+              <p (click)="navigateToArtist(song, $event)" class="artist-name-link">{{ song.artistName }}</p>
+              <div class="card-meta">
+                <span class="meta-item">
+                  <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+                  </svg>
+                  {{ formatDuration(song.durationSeconds) }}
+                </span>
+                <!-- <span class="meta-item">
+                  <svg viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M16.5 3c-1.74 0-3.41.81-4.5 2.09C10.91 3.81 9.24 3 7.5 3 4.42 3 2 5.42 2 8.5c0 3.78 3.4 6.86 8.55 11.54L12 21.35l1.45-1.32C18.6 15.36 22 12.28 22 8.5 22 5.42 19.58 3 16.5 3z"/>
+                  </svg>
+                  {{ formatNumber(song.likeCount) }}
+                </span> -->
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+    </div>
+  </main>
+</div>
+
