@@ -1,0 +1,301 @@
+<div class="spotify-container">
+  <!-- Sidebar -->
+  <app-sidebar></app-sidebar>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <!-- Header -->
+    <app-search-header [currentUser]="currentUser" (logoutEvent)="logout()"></app-search-header>
+
+    <!-- Content -->
+    <div class="content-section">
+      <!-- Loading State -->
+      <div *ngIf="loading" class="loading-container">
+        <div class="loading-spinner"></div>
+        <p>Đang tải danh sách phát...</p>
+      </div>
+
+      <!-- Playlist Detail -->
+      <div *ngIf="!loading && playlist">
+        <!-- Playlist Header -->
+        <div class="playlist-header">
+          <div class="playlist-cover">
+            <img 
+              [src]="getCoverImageUrl()" 
+              [alt]="playlist.playlistName"
+              (error)="onImageError($event)"
+              (load)="onImageLoad($event)"
+            >
+            <div class="edit-overlay" *ngIf="isOwner()">
+              <button class="edit-cover-btn" (click)="openEditModal(); $event.stopPropagation()" type="button" title="Chỉnh sửa thông tin">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                </svg>
+              </button>
+            </div>
+            <input 
+              type="file" 
+              #fileInput 
+              accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" 
+              (change)="onImageSelected($event)" 
+              style="display: none;"
+            >
+          </div>
+          <div class="playlist-info">
+            <span class="playlist-type">Danh sách phát</span>
+            <h1>{{ playlist.playlistName }}</h1>
+            <p class="playlist-description">{{ playlist.description || 'Không có mô tả' }}</p>
+            
+            <div class="playlist-meta">
+              <span>{{ playlist.songs.length }} bài hát</span>
+              <span *ngIf="playlist.isPublic">• Công khai</span>
+              <span *ngIf="!playlist.isPublic">• Riêng tư</span>
+            </div>
+            <div class="playlist-actions">
+              <button class="btn-play-large" [class.playing]="isPlayingFromThisPlaylist() && isPlaying" (click)="playPlaylist()" [disabled]="!playlist || playlist.songs.length === 0" [title]="(isPlayingFromThisPlaylist() && isPlaying) ? 'Tạm dừng' : 'Phát danh sách phát'">
+                <svg *ngIf="!(isPlayingFromThisPlaylist() && isPlaying)" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M8 5v14l11-7z"/>
+                </svg>
+                <svg *ngIf="isPlayingFromThisPlaylist() && isPlaying" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
+                </svg>
+              </button>
+              <button class="btn-primary" (click)="openAddSongModal()" *ngIf="isOwner()">
+                ➕ Thêm bài hát
+              </button>
+              <button class="btn-secondary" (click)="goBack()">
+                ← Quay lại
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Messages -->
+        <div class="error-message" *ngIf="errorMessage">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+          </svg>
+          {{ errorMessage }}
+        </div>
+
+        <div class="success-message" *ngIf="successMessage">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+            <path d="M9 16.17L4.83 12l-1.42 1.41L9 19 21 7l-1.41-1.41z"/>
+          </svg>
+          {{ successMessage }}
+        </div>
+
+        <!-- Songs List -->
+        <div class="songs-list">
+          <div *ngIf="playlist.songs.length === 0" class="empty-songs">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="empty-icon">
+              <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+            </svg>
+            <h3>Chưa có bài hát nào</h3>
+            <p>Hãy thêm bài hát vào danh sách phát này!</p>
+            <button class="btn-primary" (click)="openAddSongModal()" *ngIf="isOwner()">
+              ➕ Thêm bài hát
+            </button>
+          </div>
+
+          <table *ngIf="playlist.songs.length > 0" class="songs-table">
+            <thead>
+              <tr>
+                <th class="col-number">#</th>
+                <th class="col-title">Bài hát</th>
+                <th class="col-album">Album</th>
+                <th class="col-duration">Thời lượng</th>
+                <th class="col-actions">Thao tác</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let song of playlist.songs; let i = index" class="song-row" [class.playing]="currentSongId === song.songId && isPlaying" (click)="navigateToSong(song, $event)">
+                <td class="col-number">{{ i + 1 }}</td>
+                <td class="col-title">
+                  <div class="song-info">
+                    <img 
+                      *ngIf="song.coverImageUrl" 
+                      [src]="song.coverImageUrl" 
+                      [alt]="song.songTitle"
+                      class="song-thumb"
+                      (click)="navigateToSong(song, $event)"
+                    >
+                    <div>
+                      <div class="song-title" (click)="navigateToSong(song, $event)">{{ song.songTitle }}</div>
+                      <div class="song-artist" (click)="navigateToArtist(song, $event)">{{ song.artistName }}</div>
+                    </div>
+                  </div>
+                </td>
+                <td class="col-album">{{ song.albumTitle || 'N/A' }}</td>
+                <td class="col-duration">{{ formatDuration(song.durationSeconds) }}</td>
+                <td class="col-actions">
+                  <div class="action-buttons">
+                    <button (click)="onSongPlayClick(song); $event.stopPropagation()" class="action-btn play-btn" [title]="(currentSongId === song.songId && isPlaying) ? 'Tạm dừng' : 'Phát'">
+                      <svg *ngIf="!(currentSongId === song.songId && isPlaying)" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M8 5v14l11-7z"/>
+                      </svg>
+                      <svg *ngIf="currentSongId === song.songId && isPlaying" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M6 4h4v16H6V4zm8 0h4v16h-4V4z"/>
+                      </svg>
+                    </button>
+                    <button (click)="removeSongFromPlaylist(song); $event.stopPropagation()" class="action-btn delete-btn" title="Xóa" *ngIf="isOwner()">
+                      <svg viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M6 19c0 1.1.9 2 2 2h8c1.1 0 2-.9 2-2V7H6v12zM19 4h-3.5l-1-1h-5l-1 1H5v2h14V4z"/>
+                      </svg>
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Add Song Modal -->
+  <div class="modal-overlay" *ngIf="showAddSongModal" (click)="closeAddSongModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>➕ Thêm Bài Hát Vào Danh Sách Phát</h2>
+        <button class="modal-close" (click)="closeAddSongModal()" type="button">×</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Search -->
+        <div class="search-box">
+          <input
+            type="text"
+            [(ngModel)]="searchQuery"
+            (ngModelChange)="onSearchChange()"
+            placeholder="Tìm kiếm bài hát..."
+            class="search-input"
+          />
+        </div>
+
+        <!-- Loading -->
+        <div *ngIf="loadingSongs" class="loading-container">
+          <div class="loading-spinner"></div>
+          <p>Đang tải...</p>
+        </div>
+
+        <!-- Songs List -->
+        <div class="songs-options" *ngIf="!loadingSongs && searchQuery">
+          <div *ngIf="availableSongs.length === 0" class="empty-state">
+            <p>Không tìm thấy bài hát nào</p>
+          </div>
+          <div 
+            *ngFor="let song of availableSongs" 
+            class="song-option"
+            (click)="addSongToPlaylist(song)"
+          >
+            <div class="song-option-info">
+              <div class="song-option-title">{{ song.songTitle }}</div>
+              <div class="song-option-artist">{{ song.artistName }}</div>
+            </div>
+            <button class="add-btn">+</button>
+          </div>
+        </div>
+        
+        <!-- Empty state when no search query -->
+        <div class="empty-state" *ngIf="!loadingSongs && !searchQuery">
+          <p>Nhập tên bài hát để tìm kiếm</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Playlist Modal -->
+  <div class="modal-overlay" *ngIf="showEditModal" (click)="closeEditModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Sửa thông tin chi tiết</h2>
+        <button class="modal-close" (click)="closeEditModal()" type="button">×</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Error Message -->
+        <div class="alert alert-error" *ngIf="editErrorMessage">
+          {{ editErrorMessage }}
+        </div>
+
+        <!-- Success Message -->
+        <div class="alert alert-success" *ngIf="editSuccessMessage">
+          {{ editSuccessMessage }}
+        </div>
+
+        <!-- Image Preview -->
+        <div class="image-preview-section">
+          <div class="image-preview-container">
+            <img 
+              [src]="imagePreview || getCoverImageUrl() || 'https://via.placeholder.com/300x300/e0e0e0/666?text=Playlist'" 
+              [alt]="playlist?.playlistName"
+              class="preview-image"
+            >
+            <button type="button" class="change-image-btn" (click)="openEditImageUpload()">
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+              </svg>
+              Chọn ảnh
+            </button>
+          </div>
+          <input 
+            type="file" 
+            #editFileInput 
+            accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" 
+            (change)="onEditImageSelected($event)" 
+            style="display: none;"
+          >
+        </div>
+
+        <!-- Form Fields -->
+        <div class="form-group">
+          <label for="playlistName">Tên danh sách phát <span class="required">*</span></label>
+          <input
+            id="playlistName"
+            type="text"
+            [(ngModel)]="editForm.playlistName"
+            class="form-control"
+            placeholder="Nhập tên danh sách phát"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="description">Mô tả</label>
+          <textarea
+            id="description"
+            [(ngModel)]="editForm.description"
+            class="form-control"
+            rows="4"
+            placeholder="Thêm phần mô tả không bắt buộc"
+          ></textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="checkbox-label">
+            <input
+              type="checkbox"
+              [(ngModel)]="editForm.isPublic"
+              class="checkbox-input"
+            />
+            <span class="checkbox-text">Công khai</span>
+          </label>
+          <p class="form-hint">Danh sách phát công khai sẽ hiển thị cho tất cả người dùng</p>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="form-actions">
+          <button type="button" class="btn-cancel" (click)="closeEditModal()" [disabled]="loading">
+            Hủy
+          </button>
+          <button type="button" class="btn-save" (click)="savePlaylistInfo()" [disabled]="loading || !editForm.playlistName.trim()">
+            <span *ngIf="loading">Đang lưu...</span>
+            <span *ngIf="!loading">Lưu</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
