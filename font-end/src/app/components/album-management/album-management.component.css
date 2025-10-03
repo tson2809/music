@@ -1,0 +1,631 @@
+:host {
+  display: block;
+  height: 100%;
+}
+
+.spotify-container {
+  display: grid;
+  grid-template-areas:
+    "sidebar main";
+  grid-template-columns: var(--sidebar-width, 240px) 1fr;
+  height: 100vh;
+  background: #f7f7f7;
+  color: #0f0f0f;
+  overflow: hidden;
+}
+
+.spotify-container app-sidebar {
+  grid-area: sidebar;
+  display: block;
+  height: 100%;
+  border-right: 1px solid #ececec;
+}
+
+.spotify-container app-sidebar {
+  grid-area: sidebar;
+  display: block;
+  height: 100%;
+}
+
+.main-content {
+  grid-area: main;
+  background: linear-gradient(180deg, #e3f2fd 0%, #ffffff 260px);
+  overflow-y: auto;
+  padding-bottom: 80px;
+}
+
+:host-context(body.sidebar-collapsed) .main-content {
+  padding-left: 16px;
+  padding-right: 16px;
+}
+
+.content-section {
+  padding: 32px;
+  width: 100%;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+@media (max-width: 1200px) {
+  .content-section {
+    max-width: 100%;
+    margin: 0;
+    padding: 24px;
+  }
+}
+
+:host-context(body.sidebar-collapsed) .content-section {
+  padding: 16px 24px 80px;
+  max-width: 100%;
+  margin: 0;
+}
+
+.management-header {
+  margin-bottom: 24px;
+}
+
+.header-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.header-top h1 {
+  margin: 0;
+  font-size: 32px;
+  font-weight: 700;
+}
+
+.header-top p {
+  margin: 4px 0 0;
+  color: #555;
+  font-size: 14px;
+}
+
+.header-stats {
+  display: flex;
+  gap: 12px;
+}
+
+.stat-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px;
+  background: #1db954;
+  color: #fff;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.stat-badge svg {
+  width: 18px;
+  height: 18px;
+}
+
+.search-bar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.search-input-wrapper {
+  flex: 1;
+  position: relative;
+  display: flex;
+  align-items: center;
+  background: #fff;
+  border: 1px solid #d1d1d1;
+  border-radius: 999px;
+  padding: 0 14px;
+  transition: all 0.2s ease;
+}
+
+.search-input-wrapper:focus-within {
+  border-color: #1db954;
+  box-shadow: 0 0 0 3px rgba(29, 185, 84, 0.1);
+}
+
+.search-icon {
+  width: 18px;
+  height: 18px;
+  color: #999;
+  flex-shrink: 0;
+}
+
+.search-input {
+  flex: 1;
+  padding: 10px 8px;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 14px;
+}
+
+.clear-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  display: flex;
+  align-items: center;
+  color: #666;
+}
+
+.clear-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.search-btn {
+  padding: 10px 18px;
+  background: #1db954;
+  color: #000;
+  border: none;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.4px;
+}
+
+.search-btn svg {
+  width: 16px;
+  height: 16px;
+}
+
+.btn-primary {
+  border: none;
+  padding: 10px 20px;
+  border-radius: 999px;
+  background: #1db954;
+  color: #fff;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.ghost-btn {
+  border: 1px solid #d1d1d1;
+  background: #fff;
+  padding: 8px 16px;
+  border-radius: 999px;
+  cursor: pointer;
+}
+
+.ghost-btn.danger {
+  border-color: #f0625d;
+  color: #f0625d;
+}
+
+.album-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 16px;
+}
+
+@media (max-width: 1024px) {
+  .content-section {
+    max-width: 100%;
+    margin: 0;
+    padding: 24px;
+  }
+
+  .album-grid {
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+  }
+
+  .album-card {
+    padding: 16px;
+  }
+}
+
+@media (max-width: 768px) {
+  .spotify-container {
+    grid-template-areas:
+      "main"
+      "player";
+    grid-template-columns: 1fr;
+  }
+
+  .spotify-container app-sidebar {
+    display: none;
+  }
+
+  .content-section {
+    padding: 16px;
+    margin: 0;
+    max-width: 100%;
+  }
+
+  .header-top {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+
+  .album-grid {
+    grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  }
+}
+
+.album-card {
+  background: #fff;
+  border-radius: 14px;
+  border: 1px solid #e3e3e3;
+  display: flex;
+  flex-direction: column;
+  padding: 12px;
+  box-shadow: 0 8px 24px rgba(15, 15, 15, 0.05);
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  cursor: pointer;
+  outline: none;
+}
+
+.album-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 18px 40px rgba(15, 15, 15, 0.08);
+}
+
+.album-card:focus-visible {
+  box-shadow: 0 0 0 2px #1db954, 0 18px 40px rgba(15, 15, 15, 0.08);
+}
+
+.album-cover-wrapper {
+  position: relative;
+  margin-bottom: 10px;
+}
+
+.album-cover-large {
+  width: 100%;
+  aspect-ratio: 4 / 5;
+  object-fit: cover;
+  border-radius: 10px;
+  max-height: 180px;
+}
+
+.pill-btn {
+  position: absolute;
+  bottom: 12px;
+  right: 12px;
+  border: none;
+  background: rgba(0, 0, 0, 0.65);
+  color: #fff;
+  border-radius: 999px;
+  padding: 6px 14px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  backdrop-filter: blur(6px);
+}
+
+.album-card-body {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.album-card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+}
+
+.album-card-header h3 {
+  margin: 0;
+  font-size: 16px;
+  flex: 1;
+}
+
+.album-artist {
+  margin: 0;
+  color: #4f4f4f;
+  font-weight: 500;
+  font-size: 13px;
+}
+
+.album-created {
+  margin: 0;
+  color: #8a8a8a;
+  font-size: 12px;
+}
+
+.album-meta {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  color: #555;
+}
+
+.badge {
+  background: #f0f0f0;
+  color: #333;
+  padding: 4px 8px;
+  border-radius: 999px;
+  font-size: 12px;
+  text-transform: capitalize;
+  display: inline-block;
+}
+
+.album-card-actions {
+  display: flex;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.empty-state {
+  text-align: center;
+  padding: 32px;
+  color: #777;
+}
+
+.empty-state.full {
+  background: #fff;
+  border-radius: 16px;
+  border: 1px dashed #cfd8dc;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+.alert {
+  padding: 12px 16px;
+  border-radius: 12px;
+  margin-bottom: 16px;
+}
+
+.alert-error {
+  background: #ffe5e3;
+  color: #e53e3e;
+}
+
+.alert-success {
+  background: #e6ffed;
+  color: #1b8b43;
+}
+
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px;
+  gap: 12px;
+}
+
+.loading-container.compact {
+  padding: 16px;
+}
+
+.loading-spinner {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  border: 3px solid #e0e0e0;
+  border-top-color: #1db954;
+  animation: spin 1s linear infinite;
+}
+
+.loading-spinner.small {
+  width: 24px;
+  height: 24px;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 16px;
+}
+
+.modal {
+  background: #fff;
+  border-radius: 16px;
+  width: 100%;
+  max-width: 520px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
+}
+
+.modal.wide {
+  max-width: 960px;
+}
+
+.modal-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid #eee;
+}
+
+.modal-body {
+  padding: 24px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.modal-footer {
+  padding: 16px 24px 24px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+}
+
+.modal-close {
+  border: none;
+  background: transparent;
+  font-size: 24px;
+  cursor: pointer;
+}
+
+.modal-body input,
+.modal-body select,
+.modal-body textarea {
+  width: 100%;
+  border: 1px solid #d1d1d1;
+  border-radius: 8px;
+  padding: 10px 12px;
+  font-size: 14px;
+  box-sizing: border-box;
+}
+
+.modal-body textarea {
+  min-height: 110px;
+  resize: vertical;
+}
+
+.modal-body label {
+  font-size: 13px;
+  font-weight: 600;
+  color: #333;
+}
+
+.modal-body.upload-body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 24px;
+}
+
+.album-songs,
+.add-song-form {
+  border: 1px solid #eee;
+  border-radius: 12px;
+  padding: 16px;
+  background: #fafafa;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.songs-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.songs-table th,
+.songs-table td {
+  padding: 10px;
+  border-bottom: 1px solid #e7e7e7;
+  text-align: left;
+}
+
+.songs-table th {
+  font-size: 12px;
+  text-transform: uppercase;
+  color: #777;
+}
+
+.song-select {
+  width: 100%;
+  border: 1px solid #d1d1d1;
+  border-radius: 10px;
+  padding: 12px 14px;
+  font-size: 15px;
+  background: #fff;
+  margin-bottom: 12px;
+  box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.05);
+}
+
+.add-song-form button.btn-primary {
+  align-self: flex-start;
+  padding: 10px 24px;
+}
+
+.ghost-btn.small {
+  padding: 4px 8px;
+  font-size: 12px;
+}
+
+@media (max-width: 1200px) {
+  .spotify-container {
+    grid-template-columns: var(--sidebar-width, 200px) 1fr;
+    grid-template-columns: 220px 1fr;
+  }
+}
+
+@media (max-width: 900px) {
+  .spotify-container {
+    grid-template-areas: "main";
+    grid-template-columns: 1fr;
+    min-height: auto;
+  }
+
+  .spotify-container app-sidebar {
+    display: none;
+  }
+
+  .content-section {
+    padding: 20px;
+  }
+
+  .search-bar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .search-btn,
+  .btn-primary {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .header-top {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .modal-body.upload-body {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 600px) {
+  .content-section {
+    padding: 16px;
+  }
+
+  .album-grid {
+    grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+    gap: 12px;
+  }
+
+  .album-card {
+    padding: 10px;
+  }
+
+  .pill-btn {
+    position: static;
+    margin-top: 8px;
+    width: 100%;
+    justify-content: center;
+  }
+}
+

@@ -1,0 +1,271 @@
+<div class="spotify-container">
+  <app-sidebar></app-sidebar>
+
+  <main class="main-content">
+    <app-search-header [currentUser]="currentUser" (logoutEvent)="logout()"></app-search-header>
+
+    <div class="content-section">
+      <div class="management-header">
+        <div class="header-top">
+          <div>
+            <h1>Quản lý Album</h1>
+            <p>Quản lý album của nghệ sĩ và thêm bài hát vào album.</p>
+          </div>
+          <div class="header-stats" *ngIf="totalCount">
+            <span class="stat-badge">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 3v10.55c-.59-.34-1.27-.55-2-.55-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4V7h4V3h-6z"/>
+              </svg>
+              Tổng: {{ totalCount }} album
+            </span>
+          </div>
+        </div>
+
+        <div class="search-bar">
+          <div class="search-input-wrapper">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" class="search-icon">
+              <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+            </svg>
+            <input
+              type="text"
+              [(ngModel)]="searchQuery"
+              (keyup.enter)="onSearch()"
+              placeholder="Tìm kiếm album, tên..."
+              class="search-input"
+            />
+            <button *ngIf="searchQuery" type="button" class="clear-btn" (click)="clearSearch()">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+              </svg>
+            </button>
+          </div>
+
+          <button type="button" class="search-btn" (click)="onSearch()">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M15.5 14h-.79l-.28-.27C15.41 12.59 16 11.11 16 9.5 16 5.91 13.09 3 9.5 3S3 5.91 3 9.5 5.91 16 9.5 16c1.61 0 3.09-.59 4.23-1.57l.27.28v.79l5 4.99L20.49 19l-4.99-5zm-6 0C7.01 14 5 11.99 5 9.5S7.01 5 9.5 5 14 7.01 14 9.5 11.99 14 9.5 14z"/>
+            </svg>
+            Tìm kiếm
+          </button>
+
+          <button type="button" class="btn-primary" (click)="openCreateModal()">+ Tạo Album</button>
+        </div>
+      </div>
+
+      <div *ngIf="errorMessage" class="alert alert-error">
+        {{ errorMessage }}
+      </div>
+
+      <div *ngIf="successMessage" class="alert alert-success">
+        {{ successMessage }}
+      </div>
+
+      <div *ngIf="loading" class="loading-container">
+        <div class="loading-spinner"></div>
+        <p>Đang tải dữ liệu...</p>
+      </div>
+
+      <div *ngIf="!loading && albums.length > 0" class="album-grid">
+        <div class="album-card" *ngFor="let album of albums" (click)="goToAlbum(album)" tabindex="0">
+          <div class="album-cover-wrapper">
+            <img
+              [src]="album.coverImageUrl || 'https://via.placeholder.com/300x300?text=Album'"
+              [alt]="album.albumTitle"
+              class="album-cover-large"
+            />
+            <button class="pill-btn" (click)="openManageSongsModal(album, $event)">
+              <i class="fa-solid fa-music"></i>
+              Quản lý nhạc
+            </button>
+          </div>
+
+          <div class="album-card-body">
+            <div class="album-card-header">
+              <h3>{{ album.albumTitle }}</h3>
+              <span class="badge">{{ album.albumType }}</span>
+            </div>
+            <p class="album-artist">{{ album.artistName }}</p>
+            <p class="album-created">Tạo lúc {{ formatDate(album.createdAt) }}</p>
+
+            <div class="album-meta">
+              <span><i class="fa-solid fa-music"></i> {{ album.totalTracks }} bài hát</span>
+              <span><i class="fa-solid fa-clock"></i> {{ formatDuration(album.durationSeconds || 0) }}</span>
+            </div>
+            <div class="album-meta">
+              <span><i class="fa-solid fa-calendar"></i> {{ album.releaseDate ? formatDate(album.releaseDate) : 'Chưa đặt' }}</span>
+            </div>
+
+            <div class="album-card-actions">
+              <button class="ghost-btn" (click)="openEditModal(album, $event)">
+                <i class="fa-solid fa-pen-to-square"></i>
+                Sửa
+              </button>
+              <button class="ghost-btn danger" (click)="deleteAlbum(album, $event)">
+                <i class="fa-solid fa-trash"></i>
+                Xóa
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="!loading && albums.length === 0" class="empty-state full">
+        <p>Chưa có album nào. Hãy tạo album mới để bắt đầu.</p>
+      </div>
+
+      <div class="pagination" *ngIf="totalPages > 1">
+        <button type="button" class="ghost-btn" (click)="previousPage()" [disabled]="currentPage === 1">Trước</button>
+        <span>Trang {{ currentPage }} / {{ totalPages }}</span>
+        <button type="button" class="ghost-btn" (click)="nextPage()" [disabled]="currentPage === totalPages">Sau</button>
+      </div>
+    </div>
+  </main>
+</div>
+
+<!-- Create Modal -->
+<div class="modal-overlay" *ngIf="showCreateModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Tạo album mới</h2>
+      <button type="button" class="modal-close" (click)="closeCreateModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <label>Tên album *</label>
+      <input type="text" [(ngModel)]="formData.albumTitle" placeholder="Tên album" />
+
+      <label>Ngày phát hành</label>
+      <input type="date" [(ngModel)]="formData.releaseDate" />
+
+      <label>Loại album</label>
+      <select [(ngModel)]="formData.albumType">
+        <option value="album">Album</option>
+        <option value="single">Single</option>
+        <option value="EP">EP</option>
+        <option value="compilation">Compilation</option>
+      </select>
+
+      <label>Ảnh bìa</label>
+      <input type="file" accept="image/*" (change)="onCoverSelected($event)" />
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="ghost-btn" (click)="closeCreateModal()">Hủy</button>
+      <button type="button" class="btn-primary" (click)="createAlbum()">Tạo</button>
+    </div>
+  </div>
+</div>
+
+<!-- Edit Modal -->
+<div class="modal-overlay" *ngIf="showEditModal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>Cập nhật album</h2>
+      <button type="button" class="modal-close" (click)="closeEditModal()">×</button>
+    </div>
+    <div class="modal-body">
+      <label>Tên album *</label>
+      <input type="text" [(ngModel)]="formData.albumTitle" placeholder="Tên album" />
+
+      <label>Ngày phát hành</label>
+      <input type="date" [(ngModel)]="formData.releaseDate" />
+
+      <label>Loại album</label>
+      <select [(ngModel)]="formData.albumType">
+        <option value="album">Album</option>
+        <option value="single">Single</option>
+        <option value="EP">EP</option>
+        <option value="compilation">Compilation</option>
+      </select>
+
+      <label>Ảnh bìa mới</label>
+      <input type="file" accept="image/*" (change)="onCoverSelected($event)" />
+    </div>
+    <div class="modal-footer">
+      <button type="button" class="ghost-btn" (click)="closeEditModal()">Hủy</button>
+      <button type="button" class="btn-primary" (click)="updateAlbum()">Cập nhật</button>
+    </div>
+  </div>
+</div>
+
+<!-- Manage Songs Modal -->
+<div class="modal-overlay" *ngIf="showManageSongsModal">
+  <div class="modal wide">
+    <div class="modal-header">
+      <h2>Quản lý bài hát trong album "{{ selectedAlbum?.albumTitle }}"</h2>
+      <button type="button" class="modal-close" (click)="closeManageSongsModal()">×</button>
+    </div>
+    <div class="modal-body upload-body">
+      <div class="album-songs">
+        <h3>Bài hát trong album</h3>
+        <div *ngIf="loadingAlbumDetail" class="loading-container compact">
+          <div class="loading-spinner small"></div>
+          <p>Đang tải bài hát...</p>
+        </div>
+        <div *ngIf="!loadingAlbumDetail">
+          <div *ngIf="selectedAlbumDetail?.songs?.length; else noSong">
+            <table class="songs-table">
+              <thead>
+                <tr>
+                  <th>Tên bài hát</th>
+                  <th>Thể loại</th>
+                  <th>Trạng thái</th>
+                  <th>Thời lượng</th>
+                  <th>Thao tác</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let song of selectedAlbumDetail?.songs">
+                  <td>{{ song.songTitle }}</td>
+                  <td>{{ song.genreName || '---' }}</td>
+                  <td><span class="badge">{{ song.approvalStatus }}</span></td>
+                  <td>{{ formatDuration(song.durationSeconds) }}</td>
+                  <td>
+                    <button class="ghost-btn danger small"
+                      (click)="removeSongFromAlbum(song)"
+                      [disabled]="removingSongId === song.songId">
+                      {{ removingSongId === song.songId ? 'Đang xóa...' : 'Xóa khỏi album' }}
+                    </button>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+          <ng-template #noSong>
+            <p class="empty-state">Album chưa có bài hát nào. Hãy thêm bài hát từ danh sách bên dưới.</p>
+          </ng-template>
+        </div>
+      </div>
+
+      <div class="add-song-form">
+        <h3>Thêm bài hát vào album</h3>
+        <div *ngIf="loadingAvailableSongs" class="loading-container compact">
+          <div class="loading-spinner small"></div>
+          <p>Đang tải danh sách bài hát...</p>
+        </div>
+        <div *ngIf="!loadingAvailableSongs">
+          <div *ngIf="availableSongs.length > 0; else noAvailableSongs">
+            <label>Chọn bài hát để thêm vào album</label>
+            <select [(ngModel)]="selectedSongId" class="song-select">
+              <option [ngValue]="null">-- Chọn bài hát --</option>
+              <option *ngFor="let song of availableSongs" [ngValue]="song.songId">
+                {{ song.songTitle }}
+                <span *ngIf="song.durationSeconds">({{ formatDuration(song.durationSeconds) }})</span>
+                <span *ngIf="song.approvalStatus"> - {{ song.approvalStatus }}</span>
+              </option>
+            </select>
+            <button type="button" class="btn-primary"
+              (click)="addSongToAlbum()"
+              [disabled]="selectedSongId === null || addingSong">
+              {{ addingSong ? 'Đang thêm...' : 'Thêm vào album' }}
+            </button>
+          </div>
+          <ng-template #noAvailableSongs>
+            <p class="empty-state">
+              Không có bài hát nào có thể thêm vào album.
+              Tất cả bài hát của bạn đã được gán vào album khác hoặc bạn chưa có bài hát nào.
+            </p>
+          </ng-template>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+

@@ -1,0 +1,145 @@
+<div class="spotify-container">
+  <app-sidebar></app-sidebar>
+
+  <main class="main-content">
+    <app-search-header [currentUser]="currentUser" (logoutEvent)="logout()"></app-search-header>
+
+    <div class="content-section" *ngIf="!loading && albumDetail; else loadingTemplate">
+      <div class="album-header">
+        <img
+          [src]="albumDetail.coverImageUrl || 'https://via.placeholder.com/260x260?text=Album'"
+          [alt]="albumDetail.albumTitle"
+          class="album-cover"
+        />
+        <div class="album-info">
+          <h1>{{ albumDetail.albumTitle }}</h1>
+          <p class="album-artist">{{ albumDetail.artistName }}</p>
+          <p class="album-meta">
+            {{ albumDetail.totalTracks }} bài hát · {{ formatDuration(albumDetail.durationSeconds) }} ·
+            {{ albumDetail.releaseDate ? formatDate(albumDetail.releaseDate) : 'Chưa đặt' }}
+          </p>
+          <div class="album-actions"></div>
+        </div>
+        <div class="add-song-inline" *ngIf="isManageMode">
+          <h3>Thêm bài hát vào album</h3>
+          <div *ngIf="loadingAvailableSongs" class="loading-container compact">
+            <div class="loading-spinner small"></div>
+            <p>Đang tải danh sách bài hát...</p>
+          </div>
+          <div *ngIf="!loadingAvailableSongs">
+            <div *ngIf="availableSongs.length > 0; else noAvailableSongsHeader">
+              <select [(ngModel)]="selectedSongId">
+                <option [ngValue]="null">-- Chọn bài hát --</option>
+                <option *ngFor="let song of availableSongs" [ngValue]="song.songId">
+                  {{ song.songTitle }}
+                  <span *ngIf="song.durationSeconds">({{ formatDuration(song.durationSeconds) }})</span>
+                  <span *ngIf="song.approvalStatus"> - {{ song.approvalStatus }}</span>
+                </option>
+              </select>
+              <button class="btn-primary" (click)="addSongToAlbum()" [disabled]="selectedSongId === null || addingSong">
+                {{ addingSong ? 'Đang thêm...' : 'Thêm vào album' }}
+              </button>
+            </div>
+            <ng-template #noAvailableSongsHeader>
+              <p class="empty-state small">
+                Không có bài hát phù hợp.<br />
+                Hãy upload mới hoặc gỡ khỏi album khác.
+              </p>
+            </ng-template>
+          </div>
+        </div>
+      </div>
+
+      <div *ngIf="errorMessage" class="alert alert-error">
+        {{ errorMessage }}
+      </div>
+
+      <div *ngIf="successMessage" class="alert alert-success">
+        {{ successMessage }}
+      </div>
+
+      <section class="songs-section">
+        <div class="section-header">
+          <h2>Bài hát trong album</h2>
+        </div>
+
+        <div class="table-wrapper" *ngIf="albumDetail?.songs?.length; else noSong">
+          <table class="songs-table">
+            <thead>
+              <tr>
+                <th>#</th>
+                <th></th>
+                <th>Tên bài hát</th>
+                <th>Thể loại</th>
+                <th>Trạng thái</th>
+                <th>Thời lượng</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let song of albumDetail?.songs; let idx = index" 
+                  [class.active]="song.songId === currentSongId">
+                <td>{{ idx + 1 }}</td>
+                <td>
+                  <img 
+                    [src]="getImageUrl(song.coverImageUrl)"
+                    [alt]="song.songTitle"
+                    class="song-cover-image"
+                    (error)="$event.target.src='https://via.placeholder.com/50x50?text=Song'"
+                  />
+                </td>
+                <td>{{ song.songTitle }}</td>
+                <td>{{ song.genreName || '---' }}</td>
+                <td><span class="badge">{{ song.approvalStatus }}</span></td>
+                <td>{{ formatDuration(song.durationSeconds) }}</td>
+                <td>
+                  <div class="action-buttons">
+                    <button class="play-btn-table" 
+                            type="button" 
+                            (click)="onSongPlayClick($event, song)"
+                            [title]="song.songId === currentSongId && isPlaying ? 'Tạm dừng' : 'Phát'">
+                      <svg *ngIf="song.songId !== currentSongId || !isPlaying" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M8 5v14l11-7z"/>
+                      </svg>
+                      <svg *ngIf="song.songId === currentSongId && isPlaying" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M6 5h4v14H6zm8 0h4v14h-4z"/>
+                      </svg>
+                    </button>
+                    <button
+                      *ngIf="isManageMode"
+                      class="ghost-btn danger small"
+                      (click)="removeSongFromAlbum(song)"
+                      [disabled]="removingSongId === song.songId">
+                      {{ removingSongId === song.songId ? 'Đang xóa...' : 'Xóa' }}
+                    </button>
+                  </div>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+    </div>
+
+    <ng-template #loadingTemplate>
+      <div class="loading-container">
+        <div class="loading-spinner"></div>
+        <p>Đang tải dữ liệu...</p>
+      </div>
+    </ng-template>
+
+    <ng-template #noSong>
+      <p class="empty-state" *ngIf="isManageMode; else publicNoSong">
+        Album chưa có bài hát nào. Sử dụng phần thêm bài hát ở bên phải để thêm bài hát.
+      </p>
+    </ng-template>
+
+    <ng-template #publicNoSong>
+      <p class="empty-state">
+        Album chưa có bài hát nào để hiển thị.
+      </p>
+    </ng-template>
+  </main>
+</div>
+

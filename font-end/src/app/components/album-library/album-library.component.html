@@ -1,0 +1,108 @@
+<div class="spotify-container">
+  <!-- Sidebar -->
+  <app-sidebar></app-sidebar>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <!-- Header -->
+    <app-search-header
+      [currentUser]="currentUser"
+      (logoutEvent)="logout()">
+    </app-search-header>
+
+    <!-- Content -->
+    <div class="content-section">
+      <div class="section-header">
+        <h2>Album</h2>
+        <div class="section-actions">
+          <div class="album-search">
+            <i class="fa-solid fa-magnifying-glass"></i>
+            <input
+              type="text"
+              placeholder="Tìm kiếm album hoặc nghệ sĩ..."
+              [value]="searchTerm"
+              (input)="onSearchChange($any($event.target).value)" />
+          </div>
+        </div>
+      </div>
+
+      <div class="content-wrapper">
+        <!-- Loading -->
+        <div class="loading-container" *ngIf="isLoading">
+          <i class="fa-solid fa-spinner fa-spin"></i>
+          <span>Đang tải danh sách album...</span>
+        </div>
+
+        <!-- Error -->
+        <div class="error-message" *ngIf="!isLoading && error">
+          <i class="fa-solid fa-circle-exclamation"></i>
+          <span>{{ error }}</span>
+        </div>
+
+        <!-- Albums Grid -->
+        <div class="cards-grid" *ngIf="!isLoading && !error && albums.length > 0">
+          <div
+            class="album-card"
+            *ngFor="let album of albums"
+            (click)="onAlbumClick(album)">
+            <div
+              class="card-image"
+              [style.backgroundImage]="album.coverImageUrl ? 'url(' + album.coverImageUrl + ')' : ''">
+              <div class="card-overlay"></div>
+            </div>
+            <div class="card-content">
+              <h3>{{ album.albumTitle }}</h3>
+              <p class="card-artist">
+                <a [routerLink]="['/artists', album.artistId]" (click)="$event.stopPropagation()">
+                  {{ album.artistName }}
+                </a>
+              </p>
+              <p class="card-meta">
+                <span>{{ formatTracks(album.totalTracks) }}</span>
+                <span *ngIf="album.releaseDate">
+                  • {{ album.releaseDate | date: 'yyyy' }}
+                </span>
+              </p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Empty -->
+        <div class="empty-state" *ngIf="!isLoading && !error && albums.length === 0">
+          <i class="fa-solid fa-compact-disc"></i>
+          <p>Không tìm thấy album nào.</p>
+        </div>
+
+        <!-- Pagination -->
+        <div class="pagination" *ngIf="totalPages > 1">
+          <button
+            type="button"
+            class="page-btn"
+            [disabled]="page === 1"
+            (click)="goToPage(page - 1)">
+            <i class="fa-solid fa-chevron-left"></i>
+          </button>
+
+          <button
+            type="button"
+            class="page-number"
+            *ngFor="let p of pages"
+            [class.active]="p === page"
+            (click)="goToPage(p)">
+            {{ p }}
+          </button>
+
+          <button
+            type="button"
+            class="page-btn"
+            [disabled]="page === totalPages"
+            (click)="goToPage(page + 1)">
+            <i class="fa-solid fa-chevron-right"></i>
+          </button>
+        </div>
+      </div>
+    </div>
+  </main>
+</div>
+
+
