@@ -1,0 +1,173 @@
+<div class="spotify-container">
+  <!-- Sidebar -->
+  <app-sidebar></app-sidebar>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <app-search-header
+      [currentUser]="currentUser"
+      (logoutEvent)="logout()">
+    </app-search-header>
+
+    <div class="content-section">
+      <div class="upgrade-page">
+        <div class="upgrade-content">
+          <div class="upgrade-card">
+            <div class="upgrade-header">
+              <h1>Nâng cấp tài khoản lên Nghệ sĩ</h1>
+              <p class="subtitle">Điền thông tin để gửi yêu cầu nâng cấp tài khoản. Yêu cầu của bạn sẽ được admin xem xét và duyệt.</p>
+            </div>
+
+            <!-- Existing Request Status -->
+            <div class="existing-request" *ngIf="checkingRequest">
+              <div class="loading-state">
+                <i class="fa-solid fa-spinner fa-spin"></i>
+                <span>Đang kiểm tra yêu cầu...</span>
+              </div>
+            </div>
+
+            <div class="existing-request" *ngIf="existingRequest && !checkingRequest">
+              <div class="request-status-card" [class]="getStatusClass(existingRequest.status)">
+                <div class="status-header">
+                  <i class="fa-solid" 
+                     [class.fa-clock]="existingRequest.status === 'Pending'"
+                     [class.fa-check-circle]="existingRequest.status === 'Approved'"
+                     [class.fa-times-circle]="existingRequest.status === 'Rejected'"></i>
+                  <h3>Trạng thái yêu cầu: {{ getStatusText(existingRequest.status) }}</h3>
+                </div>
+                <div class="status-details">
+                  <p><strong>Tên nghệ sĩ:</strong> {{ existingRequest.artistName }}</p>
+                  <p *ngIf="existingRequest.biography"><strong>Tiểu sử:</strong> {{ existingRequest.biography }}</p>
+                  <p><strong>Lý do xin duyệt:</strong> {{ existingRequest.approvalReason }}</p>
+                  <p><strong>Ngày gửi:</strong> {{ existingRequest.createdAt | date:'dd/MM/yyyy HH:mm' }}</p>
+                  <p *ngIf="existingRequest.reviewedAt">
+                    <strong>Ngày xử lý:</strong> {{ existingRequest.reviewedAt | date:'dd/MM/yyyy HH:mm' }}
+                  </p>
+                  <p *ngIf="existingRequest.reviewedByUserName">
+                    <strong>Người xử lý:</strong> {{ existingRequest.reviewedByUserName }}
+                  </p>
+                  <p *ngIf="existingRequest.rejectionReason" class="rejection-reason">
+                    <strong>Lý do từ chối:</strong> {{ existingRequest.rejectionReason }}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Upgrade Form -->
+            <form 
+              *ngIf="!existingRequest || existingRequest.status === 'Rejected'"
+              [formGroup]="upgradeForm" 
+              (ngSubmit)="onSubmit()" 
+              class="upgrade-form">
+              
+              <div class="alert-stack">
+                <div class="error-message" *ngIf="errorMessage">
+                  <i class="fa-solid fa-circle-exclamation"></i>
+                  {{ errorMessage }}
+                </div>
+
+                <div class="success-message" *ngIf="successMessage">
+                  <i class="fa-solid fa-circle-check"></i>
+                  {{ successMessage }}
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="artistName">Tên nghệ sĩ *</label>
+                <input
+                  type="text"
+                  id="artistName"
+                  formControlName="artistName"
+                  placeholder="Nhập tên nghệ sĩ của bạn"
+                  [class.error]="artistName?.invalid && artistName?.touched"
+                />
+                <div class="field-error" *ngIf="artistName?.invalid && artistName?.touched">
+                  <span *ngIf="artistName?.errors?.['required']">Vui lòng nhập tên nghệ sĩ</span>
+                  <span *ngIf="artistName?.errors?.['minlength']">Tên nghệ sĩ phải có ít nhất 2 ký tự</span>
+                  <span *ngIf="artistName?.errors?.['maxlength']">Tên nghệ sĩ không được vượt quá 100 ký tự</span>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="biography">Tiểu sử nghệ sĩ</label>
+                <textarea
+                  id="biography"
+                  formControlName="biography"
+                  placeholder="Giới thiệu về bản thân, phong cách âm nhạc, thành tích..."
+                  rows="5"
+                  [class.error]="biography?.invalid && biography?.touched"
+                ></textarea>
+                <div class="field-hint">
+                  <span>{{ biography?.value?.length || 0 }}/2000 ký tự</span>
+                </div>
+                <div class="field-error" *ngIf="biography?.invalid && biography?.touched">
+                  <span *ngIf="biography?.errors?.['maxlength']">Tiểu sử không được vượt quá 2000 ký tự</span>
+                </div>
+              </div>
+
+              <div class="form-group">
+                <label for="approvalReason">Lý do xin duyệt *</label>
+                <textarea
+                  id="approvalReason"
+                  formControlName="approvalReason"
+                  placeholder="Giải thích lý do bạn muốn trở thành nghệ sĩ trên nền tảng này..."
+                  rows="4"
+                  [class.error]="approvalReason?.invalid && approvalReason?.touched"
+                ></textarea>
+                <div class="field-hint">
+                  <span>{{ approvalReason?.value?.length || 0 }}/1000 ký tự (tối thiểu 10 ký tự)</span>
+                </div>
+                <div class="field-error" *ngIf="approvalReason?.invalid && approvalReason?.touched">
+                  <span *ngIf="approvalReason?.errors?.['required']">Vui lòng nhập lý do xin duyệt</span>
+                  <span *ngIf="approvalReason?.errors?.['minlength']">Lý do xin duyệt phải có ít nhất 10 ký tự</span>
+                  <span *ngIf="approvalReason?.errors?.['maxlength']">Lý do xin duyệt không được vượt quá 1000 ký tự</span>
+                </div>
+              </div>
+
+              <div class="button-group">
+                <button type="button" class="cancel-button" routerLink="/home" [disabled]="loading">
+                  Hủy
+                </button>
+                <button type="submit" class="submit-button" [disabled]="loading || upgradeForm.invalid">
+                  <span *ngIf="!loading">
+                    <i class="fa-solid fa-paper-plane"></i>
+                    Gửi yêu cầu
+                  </span>
+                  <span *ngIf="loading">
+                    <i class="fa-solid fa-spinner fa-spin"></i>
+                    Đang gửi...
+                  </span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <app-player-bar
+    *ngIf="currentUser"
+    [currentTrack]="currentTrack"
+    [progress]="progress"
+    [volume]="volume"
+    [isPlaying]="isPlaying"
+    [currentTime]="currentTime"
+    [duration]="duration"
+    [currentSongId]="currentSongId"
+    [isFavorite]="isFavorite"
+    [bufferedProgress]="bufferedProgress"
+    [showLyrics]="showLyrics"
+    (playPause)="onPlayPause()"
+    (seek)="onSeek($event)"
+    (volumeChange)="onVolumeChange($event)"
+    (replay)="onReplay()"
+    (shuffle)="onShuffle()"
+    (muteToggle)="onMuteToggle()"
+    (previous)="onPrevious()"
+    (next)="onNext()"
+    (toggleFavorite)="onToggleFavorite()"
+    (toggleLyrics)="showLyrics = !showLyrics">
+  </app-player-bar>
+</div>
+

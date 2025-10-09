@@ -1,0 +1,201 @@
+<div class="spotify-container">
+  <!-- Sidebar -->
+  <app-sidebar [playlists]="playlists"></app-sidebar>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <!-- Header -->
+    <app-search-header [currentUser]="currentUser" (logoutEvent)="logout()"></app-search-header>
+
+    <!-- Content -->
+    <div class="content-section">
+      <!-- Loading -->
+      <div *ngIf="isLoading" class="loading-container">
+        <div class="loading-spinner"></div>
+        <p>Đang tải...</p>
+      </div>
+
+      <!-- Error message -->
+      <div class="error-message" *ngIf="errorMessage">
+        <i class="fa-solid fa-triangle-exclamation"></i>
+        {{ errorMessage }}
+      </div>
+
+      <!-- Artist Hero Section -->
+      <div *ngIf="!isLoading && artist" class="artist-hero">
+        <div class="hero-background" [style.backgroundImage]="getProfileImageUrl() ? 'url(' + getProfileImageUrl() + ')' : ''"></div>
+        <div class="hero-overlay"></div>
+        <div class="hero-content">
+          <div class="artist-image">
+            <img *ngIf="getProfileImageUrl()" [src]="getProfileImageUrl()" [alt]="artist.artistName">
+            <div *ngIf="!getProfileImageUrl()" class="no-image">
+              <i class="fa-solid fa-user"></i>
+            </div>
+            <div class="edit-overlay" *ngIf="isOwner()" (click)="openEditModal()">
+              <button class="edit-avatar-btn" type="button" title="Chỉnh sửa thông tin">
+                <svg viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+          <div class="artist-info">
+            <div class="verified-badge" *ngIf="artist.verified">
+              <i class="fa-solid fa-circle-check"></i>
+              <span>Nghệ sĩ xác thực</span>
+            </div>
+            <h1 class="artist-name">{{ artist.artistName }}</h1>
+            <div class="artist-stats">
+              <span class="stat">
+                <i class="fa-solid fa-headphones"></i>
+                {{ formatNumber(artist.monthlyListeners) }} người nghe hàng tháng
+              </span>
+              <span class="stat" *ngIf="artist.country">
+                <i class="fa-solid fa-location-dot"></i>
+                {{ artist.country }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Biography Section -->
+      <div *ngIf="!isLoading && artist && artist.biography" class="biography-section">
+        <h2>Giới thiệu</h2>
+        <p>{{ artist.biography }}</p>
+      </div>
+
+      <!-- Songs Section -->
+      <div *ngIf="!isLoading && songs.length > 0" class="songs-section">
+        <h2>Bài hát phổ biến</h2>
+        <div class="songs-list">
+          <div class="song-item" *ngFor="let song of songs; let i = index" 
+               [class.active]="song.songId === activeSongId"
+               (click)="onSongPlayClick(song)">
+            <div class="song-index">
+              <span class="index-number" *ngIf="song.songId !== activeSongId || !isPlaying">{{ i + 1 }}</span>
+              <i class="fa-solid fa-volume-high playing-icon" *ngIf="song.songId === activeSongId && isPlaying"></i>
+            </div>
+            <div class="song-cover">
+              <img *ngIf="song.coverImageUrl" [src]="song.coverImageUrl" [alt]="song.songTitle">
+              <div *ngIf="!song.coverImageUrl" class="no-cover">
+                <i class="fa-solid fa-music"></i>
+              </div>
+              <div class="play-overlay">
+                <button class="play-button" type="button">
+                  <i *ngIf="song.songId !== activeSongId || !isPlaying" class="fa-solid fa-play"></i>
+                  <i *ngIf="song.songId === activeSongId && isPlaying" class="fa-solid fa-pause"></i>
+                </button>
+              </div>
+            </div>
+            <div class="song-details">
+              <div class="song-title">{{ song.songTitle }}</div>
+              <div class="song-meta">
+                <span *ngIf="song.albumTitle">{{ song.albumTitle }}</span>
+                <span *ngIf="song.genreName" class="genre-tag">{{ song.genreName }}</span>
+              </div>
+            </div>
+            <div class="song-stats">
+              <span class="stat-item">
+                <i class="fa-solid fa-play"></i>
+                {{ formatNumber(song.playCount) }}
+              </span>
+              <span class="stat-item">
+                <i class="fa-solid fa-heart"></i>
+                {{ formatNumber(song.likeCount) }}
+              </span>
+            </div>
+            <div class="song-duration">{{ formatDuration(song.durationSeconds) }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- No songs message -->
+      <div *ngIf="!isLoading && songs.length === 0" class="no-songs">
+        <i class="fa-solid fa-music"></i>
+        <p>Nghệ sĩ chưa có bài hát nào</p>
+      </div>
+    </div>
+  </main>
+
+  <!-- Edit Artist Modal -->
+  <div class="modal-overlay" *ngIf="showEditModal" (click)="closeEditModal()">
+    <div class="modal-content" (click)="$event.stopPropagation()">
+      <div class="modal-header">
+        <h2>Sửa thông tin chi tiết</h2>
+        <button class="modal-close" (click)="closeEditModal()" type="button">×</button>
+      </div>
+
+      <div class="modal-body">
+        <!-- Error Message -->
+        <div class="alert alert-error" *ngIf="editErrorMessage">
+          {{ editErrorMessage }}
+        </div>
+
+        <!-- Success Message -->
+        <div class="alert alert-success" *ngIf="successMessage">
+          {{ successMessage }}
+        </div>
+
+        <!-- Image Preview -->
+        <div class="image-preview-section">
+          <div class="image-preview-container">
+            <img 
+              [src]="imagePreview || getProfileImageUrl() || 'https://via.placeholder.com/300x300/e0e0e0/666?text=No+Image'" 
+              [alt]="artist?.artistName"
+              class="preview-image"
+            >
+            <button type="button" class="change-image-btn" (click)="openImageUpload()">
+              <svg viewBox="0 0 24 24" fill="currentColor">
+                <path d="M3 17.25V21h3.75L17.81 9.94l-3.75-3.75L3 17.25zM20.71 7.04c.39-.39.39-1.02 0-1.41l-2.34-2.34c-.39-.39-1.02-.39-1.41 0l-1.83 1.83 3.75 3.75 1.83-1.83z"/>
+              </svg>
+              Chọn ảnh
+            </button>
+          </div>
+          <input 
+            type="file" 
+            #fileInput 
+            accept="image/jpeg,image/jpg,image/png,image/gif,image/webp" 
+            (change)="onImageSelected($event)" 
+            style="display: none;"
+          >
+        </div>
+
+        <!-- Form Fields -->
+        <div class="form-group">
+          <label for="artistName">Tên nghệ sĩ <span class="required">*</span></label>
+          <input
+            id="artistName"
+            type="text"
+            [(ngModel)]="editForm.artistName"
+            class="form-control"
+            placeholder="Nhập tên nghệ sĩ"
+            required
+          />
+        </div>
+
+        <div class="form-group">
+          <label for="biography">Giới thiệu</label>
+          <textarea
+            id="biography"
+            [(ngModel)]="editForm.biography"
+            class="form-control"
+            rows="4"
+            placeholder="Thêm phần mô tả không bắt buộc"
+          ></textarea>
+        </div>
+
+        <!-- Form Actions -->
+        <div class="form-actions">
+          <button type="button" class="btn-cancel" (click)="closeEditModal()" [disabled]="loading">
+            Hủy
+          </button>
+          <button type="button" class="btn-save" (click)="saveArtistInfo()" [disabled]="loading || !editForm.artistName.trim()">
+            <span *ngIf="loading">Đang lưu...</span>
+            <span *ngIf="!loading">Lưu</span>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
