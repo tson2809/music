@@ -1,0 +1,177 @@
+<div class="spotify-container">
+  <!-- Sidebar -->
+  <app-sidebar></app-sidebar>
+
+  <!-- Main Content -->
+  <main class="main-content">
+    <!-- Header -->
+    <app-search-header [currentUser]="currentUser" (logoutEvent)="logout()"></app-search-header>
+
+    <!-- Content -->
+    <div class="content-section">
+      <div class="management-header">
+        <div class="header-top">
+          <h1>Thống Kê Bài Hát Của Tôi</h1>
+        </div>
+      </div>
+
+      <!-- Error Message -->
+      <div class="error-message" *ngIf="errorMessage">
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-2h2v2zm0-4h-2V7h2v6z"/>
+        </svg>
+        {{ errorMessage }}
+      </div>
+
+      <!-- Loading State -->
+      <div *ngIf="loading && !allSongs.length" class="loading-container">
+        <div class="loading-spinner"></div>
+        <p>Đang tải dữ liệu thống kê...</p>
+      </div>
+
+      <!-- Song Statistics Section -->
+      <div class="song-stats-section" *ngIf="!loading || allSongs.length > 0">
+        <div class="song-stats-header">
+          <h2 class="section-title">Thống Kê Bài Hát</h2>
+          <div class="stats-tabs">
+            <button class="tab-btn" [class.active]="selectedTab === 'listens'" (click)="selectedTab = 'listens'">
+              <i class="fa-solid fa-headphones"></i>
+              Lượt Nghe
+            </button>
+            <button class="tab-btn" [class.active]="selectedTab === 'likes'" (click)="selectedTab = 'likes'">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+              </svg>
+              Lượt Thích
+            </button>
+            <button class="tab-btn" [class.active]="selectedTab === 'trending'" (click)="selectedTab = 'trending'">
+              <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                <path d="M16 6l2.29 2.29-4.88 4.88-4-4L2 16.59 3.41 18l6-6 4 4 6.3-6.29L22 12V6z"/>
+              </svg>
+              Xu Hướng
+            </button>
+          </div>
+        </div>
+
+        <!-- Top Songs by Listens -->
+        <div class="top-songs-container" *ngIf="selectedTab === 'listens'">
+          <div class="top-songs-header">
+            <h3>Top Bài Hát Theo Lượt Nghe</h3>
+            <div class="total-count" *ngIf="topSongsByListens.length > 0">
+              Tổng lượt nghe: {{ formatNumber(getTotalListens()) }}
+            </div>
+          </div>
+          <div class="top-songs-list" *ngIf="!loadingTopSongs && topSongsByListens.length > 0">
+            <div class="top-song-item" *ngFor="let song of topSongsByListens; let i = index">
+              <div class="song-rank" [class.top-1]="i === 0" [class.top-2]="i === 1" [class.top-3]="i === 2">
+                {{ i + 1 }}
+              </div>
+              <div class="song-image" [style.backgroundImage]="song.coverImageUrl ? 'url(' + song.coverImageUrl + ')' : ''"></div>
+              <div class="song-info">
+                <div class="song-title">{{ song.songTitle }}</div>
+                <div class="song-artist" *ngIf="song.albumTitle">{{ song.albumTitle }}</div>
+                <div class="song-meta" *ngIf="song.releaseDate">Phát hành: {{ formatDate(song.releaseDate) }}</div>
+              </div>
+              <div class="song-stat">
+                <i class="fa-solid fa-headphones"></i>
+                <span>{{ formatNumber(song.playCount) }}</span>
+              </div>
+            </div>
+          </div>
+          <div class="empty-state" *ngIf="!loadingTopSongs && topSongsByListens.length === 0">
+            <i class="fa-solid fa-music"></i>
+            <p>Chưa có bài hát nào được phát</p>
+          </div>
+          <div class="loading-container" *ngIf="loadingTopSongs">
+            <div class="loading-spinner"></div>
+            <p>Đang tải...</p>
+          </div>
+        </div>
+
+        <!-- Top Songs by Likes -->
+        <div class="top-songs-container" *ngIf="selectedTab === 'likes'">
+          <div class="top-songs-header">
+            <h3>Top Bài Hát Theo Lượt Thích</h3>
+            <div class="total-count" *ngIf="topSongsByLikes.length > 0">
+              Tổng lượt thích: {{ formatNumber(getTotalLikes()) }}
+            </div>
+          </div>
+          <div class="top-songs-list" *ngIf="!loadingTopSongs && topSongsByLikes.length > 0">
+            <div class="top-song-item" *ngFor="let song of topSongsByLikes; let i = index">
+              <div class="song-rank" [class.top-1]="i === 0" [class.top-2]="i === 1" [class.top-3]="i === 2">
+                {{ i + 1 }}
+              </div>
+              <div class="song-image" [style.backgroundImage]="song.coverImageUrl ? 'url(' + song.coverImageUrl + ')' : ''"></div>
+              <div class="song-info">
+                <div class="song-title">{{ song.songTitle }}</div>
+                <div class="song-artist" *ngIf="song.albumTitle">{{ song.albumTitle }}</div>
+                <div class="song-meta" *ngIf="song.releaseDate">Phát hành: {{ formatDate(song.releaseDate) }}</div>
+              </div>
+              <div class="song-stat likes">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                </svg>
+                <span>{{ formatNumber(song.likeCount) }}</span>
+              </div>
+            </div>
+          </div>
+          <div class="empty-state" *ngIf="!loadingTopSongs && topSongsByLikes.length === 0">
+            <i class="fa-solid fa-music"></i>
+            <p>Chưa có bài hát nào được thích</p>
+          </div>
+          <div class="loading-container" *ngIf="loadingTopSongs">
+            <div class="loading-spinner"></div>
+            <p>Đang tải...</p>
+          </div>
+        </div>
+
+        <!-- Trending Songs -->
+        <div class="top-songs-container" *ngIf="selectedTab === 'trending'">
+          <div class="top-songs-header">
+            <h3>Xu Hướng - Bài Hát Đang Hot</h3>
+          </div>
+          <div class="trending-description">
+            <p>Các bài hát có sự kết hợp tốt giữa lượt nghe và lượt thích, thể hiện xu hướng đang phát triển của bạn.</p>
+          </div>
+          <div class="top-songs-list" *ngIf="!loadingTopSongs && trendingSongs.length > 0">
+            <div class="top-song-item trending" *ngFor="let song of trendingSongs; let i = index">
+              <div class="song-rank" [class.top-1]="i === 0" [class.top-2]="i === 1" [class.top-3]="i === 2">
+                {{ i + 1 }}
+              </div>
+              <div class="song-image" [style.backgroundImage]="song.coverImageUrl ? 'url(' + song.coverImageUrl + ')' : ''"></div>
+              <div class="song-info">
+                <div class="song-title">{{ song.songTitle }}</div>
+                <div class="song-artist" *ngIf="song.albumTitle">{{ song.albumTitle }}</div>
+                <div class="song-meta" *ngIf="song.releaseDate">Phát hành: {{ formatDate(song.releaseDate) }}</div>
+              </div>
+              <div class="song-stats-combined">
+                <div class="song-stat">
+                  <i class="fa-solid fa-headphones"></i>
+                  <span>{{ formatNumber(song.playCount) }}</span>
+                </div>
+                <div class="song-stat likes">
+                  <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+                  </svg>
+                  <span>{{ formatNumber(song.likeCount) }}</span>
+                </div>
+              </div>
+            </div>
+          </div>
+          <div class="empty-state" *ngIf="!loadingTopSongs && trendingSongs.length === 0">
+            <i class="fa-solid fa-music"></i>
+            <p>Chưa có dữ liệu xu hướng</p>
+          </div>
+          <div class="loading-container" *ngIf="loadingTopSongs">
+            <div class="loading-spinner"></div>
+            <p>Đang tải...</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Player Bar -->
+  <app-player-bar [currentTrack]="currentTrack" [progress]="progress" [volume]="volume"></app-player-bar>
+</div>
+
