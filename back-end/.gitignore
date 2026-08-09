@@ -1,0 +1,58 @@
+## ASP.NET Core - MusicStream Project
+
+appsettings.json
+appsettings.*.json
+appsettings.Development.json
+appsettings.Production.json
+appsettings.Staging.json
+
+**/Properties/launchSettings.json
+launchSettings.json
+
+# User Secrets
+secrets.json
+**/secrets.json
+
+# Environment files
+.env
+.env.local
+.env.*.local
+
+connectionstrings.json
+**/connectionstrings.json
+
+# ============================================
+# Build results
+bin/
+obj/
+[Bb]in/
+[Oo]bj/
+[Dd]ebug/
+[Rr]elease/
+**/bin/
+**/obj/
+
+# Visual Studio
+.vs/
+*.user
+*.suo
+
+# VS Code
+.vscode/
+
+# Database files
+*.mdf
+*.ldf
+
+# Logs
+*.log
+
+# NuGet packages
+packages/
+
+# Node modules (nếu có Angular frontend)
+node_modules/
+
+# OS files
+.DS_Store
+Thumbs.db
